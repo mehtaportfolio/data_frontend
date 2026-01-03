@@ -25,12 +25,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   
-  const [state, setState] = useState<AuthState>(() => {
-    const token = localStorage.getItem('auth_token');
-    return {
-      isAuthenticated: token !== null,
-      isSetup: storage.isSetup()
-    };
+  const [state, setState] = useState<AuthState>({
+    isAuthenticated: false,
+    isSetup: storage.isSetup()
   });
 
   const logout = useCallback(() => {

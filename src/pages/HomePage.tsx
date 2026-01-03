@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Building2, CreditCard, LogOut, FileText, Shield, Globe, Plus, X } from 'lucide-react';
+import { Building2, CreditCard, LogOut, FileText, Shield, Globe, Plus, X, RefreshCw } from 'lucide-react';
 import { CategoryCard } from '../components/data/CategoryCard';
 import { DataForm } from '../components/data/DataForm';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { useSupabase } from '../hooks/useSupabase';
+import { useServiceHealth } from '../hooks/useServiceHealth';
 import { BankAccount, GeneralDocument, InsurancePolicy, Website, FormField } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -204,6 +205,7 @@ export function HomePage() {
   const {
     logout
   } = useAuth();
+  const { checkServiceStatus, isLoading } = useServiceHealth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openFormType, setOpenFormType] = useState<'bank-accounts' | 'credit-cards' | 'websites' | 'insurance' | 'documents' | null>(null);
   
@@ -348,6 +350,15 @@ export function HomePage() {
           <div className="flex items-center gap-2 relative">
             <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
               {isMenuOpen ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => checkServiceStatus()}
+              disabled={isLoading}
+              title="Check backend service status"
+            >
+              <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
             <Button variant="ghost" size="icon" onClick={logout}>
               <LogOut className="w-5 h-5" />
