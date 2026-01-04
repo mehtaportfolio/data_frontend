@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DataForm } from '../components/data/DataForm';
 import { ConfirmDialog } from '../components/data/ConfirmDialog';
+import { SelectItemModal } from '../components/data/SelectItemModal';
 import { useSupabase } from '../hooks/useSupabase';
 import { CreditCard, FormField } from '../types';
 import { Home, X, Edit2, Trash2 } from 'lucide-react';
@@ -84,6 +85,8 @@ export function CreditCardsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CreditCard | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showItemSelector, setShowItemSelector] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'edit' | 'delete' | null>(null);
 
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
@@ -132,8 +135,13 @@ export function CreditCardsPage() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setEditingItem(itemsByBank[0]);
-                setIsFormOpen(true);
+                if (itemsByBank.length > 1) {
+                  setPendingAction('edit');
+                  setShowItemSelector(true);
+                } else {
+                  setEditingItem(itemsByBank[0]);
+                  setIsFormOpen(true);
+                }
               }}
               className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-2"
             >
@@ -142,7 +150,12 @@ export function CreditCardsPage() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setDeleteId(itemsByBank[0]?.id || null);
+                if (itemsByBank.length > 1) {
+                  setPendingAction('delete');
+                  setShowItemSelector(true);
+                } else {
+                  setDeleteId(itemsByBank[0]?.id || null);
+                }
               }}
               className="text-red-500 hover:text-red-700 dark:hover:text-red-400 p-2"
             >
@@ -340,11 +353,34 @@ export function CreditCardsPage() {
         )}
       </div>
 
+      <SelectItemModal
+        isOpen={showItemSelector}
+        items={itemsByBank}
+        title={`Select Credit Card`}
+        getItemLabel={(item) => `${item.bank_name}`}
+        getItemDescription={(item) => item.credit_card_number ? `Card: ${item.credit_card_number.slice(-4)}` : ''}
+        onSelect={(item) => {
+          if (pendingAction === 'edit') {
+            setEditingItem(item);
+            setIsFormOpen(true);
+          } else if (pendingAction === 'delete') {
+            setDeleteId(item.id);
+          }
+          setShowItemSelector(false);
+          setPendingAction(null);
+        }}
+        onClose={() => {
+          setShowItemSelector(false);
+          setPendingAction(null);
+        }}
+      />
+
       <DataForm
         isOpen={isFormOpen}
         onClose={() => {
           setIsFormOpen(false);
           setEditingItem(null);
+          setShowItemSelector(false);
         }}
         onSubmit={async (formData) => {
           if (editingItem) {
@@ -352,6 +388,9 @@ export function CreditCardsPage() {
           } else {
             await create(formData);
           }
+          setIsFormOpen(false);
+          setEditingItem(null);
+          setShowItemSelector(false);
         }}
         fields={CREDIT_CARD_FIELDS}
         initialData={editingItem}

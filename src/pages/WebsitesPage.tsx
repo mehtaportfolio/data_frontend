@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DataForm } from '../components/data/DataForm';
 import { ConfirmDialog } from '../components/data/ConfirmDialog';
+import { SelectItemModal } from '../components/data/SelectItemModal';
 import { useSupabase } from '../hooks/useSupabase';
 import { Website, FormField } from '../types';
 import { Home, X, Edit2, Trash2, Plus } from 'lucide-react';
@@ -81,6 +82,8 @@ export function WebsitesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Website | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showItemSelector, setShowItemSelector] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'edit' | 'delete' | null>(null);
 
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
@@ -125,10 +128,15 @@ export function WebsitesPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                setEditingItem(itemsByWebsite[0]);
-                setSelectedOwner(null);
-                setSelectedWebsite(null);
-                setIsFormOpen(true);
+                if (itemsByWebsite.length > 1) {
+                  setPendingAction('edit');
+                  setShowItemSelector(true);
+                } else {
+                  setEditingItem(itemsByWebsite[0]);
+                  setSelectedOwner(null);
+                  setSelectedWebsite(null);
+                  setIsFormOpen(true);
+                }
               }}
               className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-2"
             >
@@ -136,9 +144,14 @@ export function WebsitesPage() {
             </button>
             <button
               onClick={() => {
-                setDeleteId(itemsByWebsite[0]?.id || null);
-                setSelectedOwner(null);
-                setSelectedWebsite(null);
+                if (itemsByWebsite.length > 1) {
+                  setPendingAction('delete');
+                  setShowItemSelector(true);
+                } else {
+                  setDeleteId(itemsByWebsite[0]?.id || null);
+                  setSelectedOwner(null);
+                  setSelectedWebsite(null);
+                }
               }}
               className="text-red-500 hover:text-red-700 dark:hover:text-red-400 p-2"
             >
@@ -359,11 +372,34 @@ export function WebsitesPage() {
 
       {selectedWebsite && selectedOwner && renderDetailsModal()}
 
+      <SelectItemModal
+        isOpen={showItemSelector}
+        items={itemsByWebsite}
+        title={`Select Website Account`}
+        getItemLabel={(item) => `${item.short_web_name}`}
+        getItemDescription={(item) => `${item.account_owner}${item.account_type ? ` • ${item.account_type}` : ''}`}
+        onSelect={(item) => {
+          if (pendingAction === 'edit') {
+            setEditingItem(item);
+            setIsFormOpen(true);
+          } else if (pendingAction === 'delete') {
+            setDeleteId(item.id);
+          }
+          setShowItemSelector(false);
+          setPendingAction(null);
+        }}
+        onClose={() => {
+          setShowItemSelector(false);
+          setPendingAction(null);
+        }}
+      />
+
       <DataForm
         isOpen={isFormOpen}
         onClose={() => {
           setIsFormOpen(false);
           setEditingItem(null);
+          setShowItemSelector(false);
         }}
         onSubmit={async formData => {
           if (editingItem) {
@@ -373,6 +409,7 @@ export function WebsitesPage() {
           }
           setIsFormOpen(false);
           setEditingItem(null);
+          setShowItemSelector(false);
         }}
         fields={WEBSITE_FIELDS}
         initialData={editingItem}

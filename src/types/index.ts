@@ -70,6 +70,7 @@ export interface Deposit extends BaseEntity {
   amount: number;
   bank_name: string;
   branch?: string;
+  deposit_type?: string;
 }
 
 export interface Website extends BaseEntity {

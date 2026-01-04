@@ -36,15 +36,18 @@ export function BankDepositPage() {
       amount: '',
       bank_name: 'PNB',
       branch: 'MP',
+      deposit_type: '',
     },
   });
 
   const [selectedYear, setSelectedYear] = useState<string>('');
+  const [selectedTab, setSelectedTab] = useState<string>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDeposit, setEditingDeposit] = useState<Deposit | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [bankNames, setBankNames] = useState<string[]>(['PNB', 'HDFC Bank', 'ICICI Bank', 'SBI', 'Axis Bank']);
   const [branches, setBranches] = useState<string[]>(['MP', 'Delhi', 'Mumbai', 'Bangalore', 'Pune']);
+  const [depositTypes, setDepositTypes] = useState<string[]>([]);
   const [showYearModal, setShowYearModal] = useState(false);
   const [selectedYearForModal, setSelectedYearForModal] = useState<string | null>(null);
 
@@ -54,20 +57,36 @@ export function BankDepositPage() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    const uniqueTypes = Array.from(new Set(
+      deposits
+        .map(d => d.deposit_type)
+        .filter(Boolean)
+    )).sort() as string[];
+    setDepositTypes(uniqueTypes);
+  }, [deposits]);
+
   const bankNameValue = watch('bank_name');
   const branchValue = watch('branch');
 
   const isYearFiltered = selectedYear !== '';
 
   const depositsForYear = useMemo(() => {
-    if (!isYearFiltered) {
-      return deposits;
+    let filtered = deposits;
+
+    if (selectedTab !== 'all') {
+      filtered = filtered.filter(deposit => deposit.deposit_type === selectedTab);
     }
-    return deposits.filter(deposit => {
+
+    if (!isYearFiltered) {
+      return filtered;
+    }
+
+    return filtered.filter(deposit => {
       const depositYear = new Date(deposit.deposit_date).getFullYear().toString();
       return depositYear === selectedYear;
     });
-  }, [deposits, selectedYear, isYearFiltered]);
+  }, [deposits, selectedYear, selectedTab, isYearFiltered]);
 
   const displayedTotal = useMemo(() => {
     return depositsForYear.reduce((sum, deposit) => sum + deposit.amount, 0);
@@ -77,7 +96,9 @@ export function BankDepositPage() {
     const yearMap: { [key: string]: number } = {};
     const dataToProcess = isYearFiltered
       ? depositsForYear
-      : deposits;
+      : selectedTab === 'all'
+      ? deposits
+      : deposits.filter(d => d.deposit_type === selectedTab);
     
     dataToProcess.forEach(deposit => {
       const year = new Date(deposit.deposit_date).getFullYear().toString();
@@ -86,7 +107,7 @@ export function BankDepositPage() {
     return Object.entries(yearMap)
       .map(([year, amount]) => ({ year, amount }))
       .sort((a, b) => parseInt(b.year) - parseInt(a.year));
-  }, [deposits, depositsForYear, isYearFiltered]);
+  }, [deposits, depositsForYear, isYearFiltered, selectedTab]);
 
   const totalAmount = useMemo(() => {
     return yearWiseData.reduce((sum, item) => sum + item.amount, 0) || 1;
@@ -97,6 +118,7 @@ export function BankDepositPage() {
     amount: string;
     bank_name: string;
     branch: string;
+    deposit_type: string;
   }) => {
     try {
       const depositData = {
@@ -104,6 +126,7 @@ export function BankDepositPage() {
         amount: parseFloat(data.amount),
         bank_name: data.bank_name,
         branch: data.branch,
+        deposit_type: data.deposit_type || undefined,
       };
 
       if (editingDeposit) {
@@ -118,6 +141,7 @@ export function BankDepositPage() {
         amount: '',
         bank_name: 'PNB',
         branch: 'MP',
+        deposit_type: '',
       });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to save deposit';
@@ -170,6 +194,7 @@ export function BankDepositPage() {
                   amount: '',
                   bank_name: 'PNB',
                   branch: 'MP',
+                  deposit_type: '',
                 });
                 setIsFormOpen(true);
               }}
@@ -180,6 +205,43 @@ export function BankDepositPage() {
           </div>
         </div>
 
+        {/* Deposit Type Tabs */}
+        {depositTypes.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex gap-2 overflow-x-auto pb-2"
+          >
+            <motion.button
+              onClick={() => setSelectedTab('all')}
+              className={`px-4 py-2 rounded-lg whitespace-nowrap font-medium transition-all ${
+                selectedTab === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-700'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              All
+            </motion.button>
+            {depositTypes.map(type => (
+              <motion.button
+                key={type}
+                onClick={() => setSelectedTab(type)}
+                className={`px-4 py-2 rounded-lg whitespace-nowrap font-medium transition-all ${
+                  selectedTab === type
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-700'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {type}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+
         {/* Overall Total Card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -187,14 +249,19 @@ export function BankDepositPage() {
           className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700"
         >
           <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-            {isYearFiltered ? `Total (${selectedYear})` : 'Overall Total'}
+            {isYearFiltered 
+              ? `Total (${selectedYear}${selectedTab !== 'all' ? ` - ${selectedTab}` : ''})`
+              : `Total${selectedTab !== 'all' ? ` - ${selectedTab}` : ''}`
+            }
           </p>
           <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
             ₹{displayedTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </h3>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2">
             {isYearFiltered 
-              ? `${depositsForYear.length} deposits in ${selectedYear}`
+              ? `${depositsForYear.length} deposits${selectedTab !== 'all' ? ` (${selectedTab})` : ''} in ${selectedYear}`
+              : selectedTab !== 'all'
+              ? `${deposits.filter(d => d.deposit_type === selectedTab).length} ${selectedTab} deposits`
               : `${deposits.length} total deposits across all years`
             }
           </p>
@@ -299,6 +366,7 @@ export function BankDepositPage() {
                                     amount: deposit.amount.toString(),
                                     bank_name: deposit.bank_name,
                                     branch: deposit.branch || 'MP',
+                                    deposit_type: deposit.deposit_type || '',
                                   });
                                   setIsFormOpen(true);
                                 }}
@@ -351,7 +419,7 @@ export function BankDepositPage() {
           <div className="sticky top-0 flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
             <div>
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                Deposits - {selectedYearForModal}
+                Deposits - {selectedYearForModal}{selectedTab !== 'all' && ` (${selectedTab})`}
               </h2>
             </div>
             <button
@@ -376,7 +444,11 @@ export function BankDepositPage() {
               <tbody>
                 {selectedYearForModal &&
                   deposits
-                    .filter(d => new Date(d.deposit_date).getFullYear().toString() === selectedYearForModal)
+                    .filter(d => {
+                      const yearMatch = new Date(d.deposit_date).getFullYear().toString() === selectedYearForModal;
+                      const typeMatch = selectedTab === 'all' || d.deposit_type === selectedTab;
+                      return yearMatch && typeMatch;
+                    })
                     .sort((a, b) => new Date(b.deposit_date).getTime() - new Date(a.deposit_date).getTime())
                     .map(deposit => {
                       const depositDate = new Date(deposit.deposit_date);
@@ -404,6 +476,7 @@ export function BankDepositPage() {
                                     amount: deposit.amount.toString(),
                                     bank_name: deposit.bank_name,
                                     branch: deposit.branch || 'MP',
+                                    deposit_type: deposit.deposit_type || '',
                                   });
                                   setShowYearModal(false);
                                   setIsFormOpen(true);
@@ -443,6 +516,7 @@ export function BankDepositPage() {
             amount: '',
             bank_name: 'PNB',
             branch: 'MP',
+            deposit_type: '',
           });
         }}
         title={editingDeposit ? 'Edit Bank Deposit' : 'Add Bank Deposit'}
@@ -459,6 +533,7 @@ export function BankDepositPage() {
                   amount: '',
                   bank_name: 'PNB',
                   branch: 'MP',
+                  deposit_type: '',
                 });
               }}
               type="button"
@@ -542,6 +617,20 @@ export function BankDepositPage() {
             error={errors.branch?.message as string | undefined}
             required={true}
             placeholder="Select branch"
+          />
+          <SelectWithAdd
+            label="Deposit Type"
+            value={watch('deposit_type')}
+            onChange={(value) => setValue('deposit_type', value)}
+            options={depositTypes}
+            onAddNew={(newType) => {
+              if (!depositTypes.includes(newType)) {
+                setDepositTypes([...depositTypes, newType].sort());
+              }
+            }}
+            error={errors.deposit_type?.message as string | undefined}
+            required={false}
+            placeholder="Select deposit type"
           />
         </form>
       </Modal>

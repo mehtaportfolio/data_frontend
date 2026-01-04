@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DataForm } from '../components/data/DataForm';
 import { ConfirmDialog } from '../components/data/ConfirmDialog';
+import { SelectItemModal } from '../components/data/SelectItemModal';
 import { useSupabase } from '../hooks/useSupabase';
 import { BankAccount, FormField } from '../types';
 import { Home, X, Edit2, Trash2, Plus } from 'lucide-react';
@@ -117,6 +118,8 @@ export function BankAccountsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BankAccount | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showItemSelector, setShowItemSelector] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'edit' | 'delete' | null>(null);
 
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
@@ -171,10 +174,15 @@ export function BankAccountsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                setEditingItem(itemsByOwner[0]);
-                setSelectedBank(null);
-                setSelectedOwner(null);
-                setIsFormOpen(true);
+                if (itemsByOwner.length > 1) {
+                  setPendingAction('edit');
+                  setShowItemSelector(true);
+                } else {
+                  setEditingItem(itemsByOwner[0]);
+                  setSelectedBank(null);
+                  setSelectedOwner(null);
+                  setIsFormOpen(true);
+                }
               }}
               className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-2"
             >
@@ -182,9 +190,14 @@ export function BankAccountsPage() {
             </button>
             <button
               onClick={() => {
-                setDeleteId(itemsByOwner[0]?.id || null);
-                setSelectedBank(null);
-                setSelectedOwner(null);
+                if (itemsByOwner.length > 1) {
+                  setPendingAction('delete');
+                  setShowItemSelector(true);
+                } else {
+                  setDeleteId(itemsByOwner[0]?.id || null);
+                  setSelectedBank(null);
+                  setSelectedOwner(null);
+                }
               }}
               className="text-red-500 hover:text-red-700 dark:hover:text-red-400 p-2"
             >
@@ -465,11 +478,34 @@ export function BankAccountsPage() {
 
       {selectedOwner && selectedBank && renderDetailsModal()}
 
+      <SelectItemModal
+        isOpen={showItemSelector}
+        items={itemsByOwner}
+        title={`Select Account`}
+        getItemLabel={(item) => `${item.bank_name} - ${item.account_owner || 'Unknown'}`}
+        getItemDescription={(item) => item.account_number ? `Account: ${item.account_number.slice(-4)}` : ''}
+        onSelect={(item) => {
+          if (pendingAction === 'edit') {
+            setEditingItem(item);
+            setIsFormOpen(true);
+          } else if (pendingAction === 'delete') {
+            setDeleteId(item.id);
+          }
+          setShowItemSelector(false);
+          setPendingAction(null);
+        }}
+        onClose={() => {
+          setShowItemSelector(false);
+          setPendingAction(null);
+        }}
+      />
+
       <DataForm
         isOpen={isFormOpen}
         onClose={() => {
           setIsFormOpen(false);
           setEditingItem(null);
+          setShowItemSelector(false);
         }}
         onSubmit={async formData => {
           if (editingItem) {
@@ -479,6 +515,7 @@ export function BankAccountsPage() {
           }
           setIsFormOpen(false);
           setEditingItem(null);
+          setShowItemSelector(false);
         }}
         fields={FIELDS}
         initialData={editingItem}

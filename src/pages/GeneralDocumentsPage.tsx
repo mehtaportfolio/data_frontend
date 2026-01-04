@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DataForm } from '../components/data/DataForm';
 import { ConfirmDialog } from '../components/data/ConfirmDialog';
+import { SelectItemModal } from '../components/data/SelectItemModal';
 import { useSupabase } from '../hooks/useSupabase';
 import { GeneralDocument, FormField } from '../types';
 import { Home, X, Edit2, Trash2, Plus } from 'lucide-react';
@@ -61,6 +62,8 @@ export function GeneralDocumentsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<GeneralDocument | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showItemSelector, setShowItemSelector] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'edit' | 'delete' | null>(null);
 
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
@@ -105,10 +108,15 @@ export function GeneralDocumentsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                setEditingItem(itemsByOwner[0]);
-                setSelectedDocName(null);
-                setSelectedOwner(null);
-                setIsFormOpen(true);
+                if (itemsByOwner.length > 1) {
+                  setPendingAction('edit');
+                  setShowItemSelector(true);
+                } else {
+                  setEditingItem(itemsByOwner[0]);
+                  setSelectedDocName(null);
+                  setSelectedOwner(null);
+                  setIsFormOpen(true);
+                }
               }}
               className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-2"
             >
@@ -116,9 +124,14 @@ export function GeneralDocumentsPage() {
             </button>
             <button
               onClick={() => {
-                setDeleteId(itemsByOwner[0]?.id || null);
-                setSelectedDocName(null);
-                setSelectedOwner(null);
+                if (itemsByOwner.length > 1) {
+                  setPendingAction('delete');
+                  setShowItemSelector(true);
+                } else {
+                  setDeleteId(itemsByOwner[0]?.id || null);
+                  setSelectedDocName(null);
+                  setSelectedOwner(null);
+                }
               }}
               className="text-red-500 hover:text-red-700 dark:hover:text-red-400 p-2"
             >
@@ -320,11 +333,34 @@ export function GeneralDocumentsPage() {
 
       {selectedOwner && selectedDocName && renderDetailsModal()}
 
+      <SelectItemModal
+        isOpen={showItemSelector}
+        items={itemsByOwner}
+        title={`Select ${selectedDocName} Document`}
+        getItemLabel={(item) => `${item.document_number || 'No number'}`}
+        getItemDescription={(item) => `${item.account_owner}${item.issue_date ? ` • ${item.issue_date}` : ''}`}
+        onSelect={(item) => {
+          if (pendingAction === 'edit') {
+            setEditingItem(item);
+            setIsFormOpen(true);
+          } else if (pendingAction === 'delete') {
+            setDeleteId(item.id);
+          }
+          setShowItemSelector(false);
+          setPendingAction(null);
+        }}
+        onClose={() => {
+          setShowItemSelector(false);
+          setPendingAction(null);
+        }}
+      />
+
       <DataForm
         isOpen={isFormOpen}
         onClose={() => {
           setIsFormOpen(false);
           setEditingItem(null);
+          setShowItemSelector(false);
         }}
         onSubmit={async formData => {
           if (editingItem) {
@@ -334,6 +370,7 @@ export function GeneralDocumentsPage() {
           }
           setIsFormOpen(false);
           setEditingItem(null);
+          setShowItemSelector(false);
         }}
         fields={getGeneralDocumentsFields(editingItem?.document_name || selectedDocName)}
         initialData={editingItem}
