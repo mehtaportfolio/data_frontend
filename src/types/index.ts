@@ -62,7 +62,7 @@ export interface InsurancePolicy extends BaseEntity {
   nominee_name?: string;
   nominee_dob?: string;
   notes?: string;
-  policy_document?: string;
+  policy_documents?: string[] | string;
 }
 
 export interface Deposit extends BaseEntity {
@@ -94,6 +94,7 @@ export interface FormField {
   required?: boolean;
   secure?: boolean;
   options?: string[];
+  selectWithAdd?: boolean;
   placeholder?: string;
   icon?: unknown;
   accept?: string;

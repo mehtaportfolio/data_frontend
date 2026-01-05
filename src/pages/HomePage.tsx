@@ -30,6 +30,68 @@ const BANK_ACCOUNT_FIELDS: FormField[] = [{
   name: 'branch',
   label: 'Branch Name',
   type: 'text'
+}, {
+  name: 'card_number',
+  label: 'Card Number',
+  type: 'text',
+  secure: true,
+  placeholder: '1234567890123456'
+}, {
+  name: 'expiry_date',
+  label: 'Expiry Date (MM/YY)',
+  type: 'text',
+  placeholder: 'MM/YY'
+}, {
+  name: 'cvv',
+  label: 'CVV',
+  type: 'password',
+  secure: true,
+  placeholder: '123'
+}, {
+  name: 'customer_id',
+  label: 'Customer ID',
+  type: 'text',
+  secure: true,
+  placeholder: 'Customer ID'
+}, {
+  name: 'user_id',
+  label: 'User ID',
+  type: 'text',
+  secure: true,
+  placeholder: 'User ID'
+}, {
+  name: 'login_password',
+  label: 'Login Password',
+  type: 'password',
+  secure: true
+}, {
+  name: 'account_owner',
+  label: 'Account Owner',
+  type: 'text'
+}, {
+  name: 'upi_pin',
+  label: 'UPI PIN',
+  type: 'password',
+  secure: true
+}, {
+  name: 'atm_pin',
+  label: 'ATM PIN',
+  type: 'password',
+  secure: true
+}, {
+  name: 'issue_date',
+  label: 'Issue Date',
+  type: 'date'
+}, {
+  name: 'transaction_password',
+  label: 'Transaction Password',
+  type: 'password',
+  secure: true
+}, {
+  name: 'status',
+  label: 'Status',
+  type: 'text',
+  placeholder: 'e.g. Active, Inactive'
 }];
 
 const CREDIT_CARD_FIELDS: FormField[] = [{
@@ -79,95 +141,141 @@ const CREDIT_CARD_FIELDS: FormField[] = [{
   secure: true
 }, {
   name: 'internet_banking_id',
-  label: 'Internet Banking ID',
-  type: 'text',
-  secure: true
-}];
-
-const WEBSITE_FIELDS: FormField[] = [{
-  name: 'website_name',
-  label: 'Website/Service Name',
-  type: 'text',
-  required: true,
-  placeholder: 'e.g. Gmail, Amazon'
-}, {
-  name: 'login_id',
-  label: 'Login ID / Email',
+  label: 'User ID',
   type: 'text',
   secure: true,
-  placeholder: 'user@example.com'
+  placeholder: 'User ID'
 }, {
-  name: 'password',
-  label: 'Password',
+  name: 'login_password',
+  label: 'Login Password',
   type: 'password',
-  secure: true,
-  placeholder: 'Password'
-}, {
-  name: 'recovery_email',
-  label: 'Recovery Email',
-  type: 'email',
-  placeholder: 'recovery@example.com'
-}, {
-  name: 'security_questions',
-  label: 'Security Questions & Answers',
-  type: 'text',
-  placeholder: 'e.g. Q1: What is your mother\'s name? A: ...'
-}, {
-  name: 'two_factor_auth',
-  label: 'Two-Factor Authentication',
-  type: 'text',
-  placeholder: 'e.g. Enabled via SMS'
-}];
-
-const INSURANCE_POLICY_FIELDS: FormField[] = [{
-  name: 'company_name',
-  label: 'Insurance Company',
-  type: 'text',
-  required: true,
-  placeholder: 'e.g. HDFC Life'
-}, {
-  name: 'policy_number',
-  label: 'Policy Number',
-  type: 'text',
-  secure: true,
-  placeholder: '1234567890'
-}, {
-  name: 'policy_type',
-  label: 'Policy Type',
-  type: 'text',
-  placeholder: 'e.g. Term Life, Endowment'
-}, {
-  name: 'start_date',
-  label: 'Start Date',
-  type: 'date'
-}, {
-  name: 'maturity_date',
-  label: 'Maturity Date',
-  type: 'date'
-}, {
-  name: 'premium_amount',
-  label: 'Premium Amount',
-  type: 'text',
-  placeholder: '₹5,000'
-}, {
-  name: 'premium_frequency',
-  label: 'Premium Frequency',
-  type: 'text',
-  placeholder: 'e.g. Monthly, Yearly'
-}, {
-  name: 'sum_assured',
-  label: 'Sum Assured',
-  type: 'text',
-  placeholder: '₹10,00,000'
-}, {
-  name: 'agent_name',
-  label: 'Agent Name',
-  type: 'text'
+  secure: true
 }, {
   name: 'status',
   label: 'Status',
   type: 'text',
-  placeholder: 'e.g. Active, Expired'
+  placeholder: 'e.g. Active, Inactive'
+}];
+
+const WEBSITE_FIELDS: FormField[] = [{
+  name: 'account_owner',
+  label: 'Account Owner',
+  type: 'text',
+  required: true
+}, {
+  name: 'account_type',
+  label: 'Account Type',
+  type: 'text'
+}, {
+  name: 'short_web_name',
+  label: 'Website Name',
+  type: 'text',
+  required: true
+}, {
+  name: 'number',
+  label: 'Reference Number',
+  type: 'text'
+}, {
+  name: 'website_address',
+  label: 'Website Address',
+  type: 'text',
+  required: true
+}, {
+  name: 'login_id',
+  label: 'Login ID / Email',
+  type: 'text',
+  secure: true
+}, {
+  name: 'login_password',
+  label: 'Login Password',
+  type: 'password',
+  secure: true
+}, {
+  name: 'two_step_password',
+  label: 'Two-Step Verification Password',
+  type: 'password',
+  secure: true
+}, {
+  name: 'other_password',
+  label: 'Other Password',
+  type: 'password',
+  secure: true
+}, {
+  name: 'notes',
+  label: 'Notes',
+  type: 'textarea'
+}];
+
+const INSURANCE_POLICY_FIELDS: FormField[] = [{
+  name: 'policy_type',
+  label: 'Policy Type',
+  type: 'text',
+  required: true,
+  placeholder: 'e.g. Life, Health, Motor, Home'
+}, {
+  name: 'policy_name',
+  label: 'Policy Name',
+  type: 'text',
+  required: true,
+  placeholder: 'e.g. Endowment Plan, Term Insurance'
+}, {
+  name: 'policy_number',
+  label: 'Policy Number',
+  type: 'text',
+  required: true,
+  secure: true,
+  placeholder: 'e.g. POL123456789'
+}, {
+  name: 'start_date',
+  label: 'Start Date',
+  type: 'date',
+  required: true
+}, {
+  name: 'expiry_date',
+  label: 'Expiry Date',
+  type: 'date'
+}, {
+  name: 'insured_amount',
+  label: 'Insured Amount',
+  type: 'number',
+  required: true,
+  placeholder: 'e.g. 1000000'
+}, {
+  name: 'premium_amount',
+  label: 'Premium Amount',
+  type: 'number',
+  required: true,
+  placeholder: 'e.g. 15000'
+}, {
+  name: 'policy_year',
+  label: 'Policy Year',
+  type: 'text',
+  placeholder: 'e.g. 2024-2025'
+}, {
+  name: 'payment_year',
+  label: 'Payment Year',
+  type: 'text',
+  placeholder: 'e.g. one time or 30 years'
+}, {
+  name: 'frequency',
+  label: 'Payment Frequency',
+  type: 'select',
+  options: ['Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'],
+  placeholder: 'Select payment frequency'
+}, {
+  name: 'nominee_name',
+  label: 'Nominee Name',
+  type: 'text',
+  placeholder: 'Nominee name'
+}, {
+  name: 'nominee_dob',
+  label: 'Nominee Date of Birth',
+  type: 'date'
+}, {
+  name: 'notes',
+  label: 'Notes',
+  type: 'textarea',
+  placeholder: 'Additional notes about the policy'
 }];
 
 const GENERAL_DOCUMENT_FIELDS: FormField[] = [{
@@ -175,13 +283,19 @@ const GENERAL_DOCUMENT_FIELDS: FormField[] = [{
   label: 'Document Name',
   type: 'text',
   required: true,
-  placeholder: 'e.g. Passport, PAN Card'
+  placeholder: 'e.g. Passport, Aadhar, Driving License'
+}, {
+  name: 'account_owner',
+  label: 'Account Owner',
+  type: 'text',
+  required: true,
+  placeholder: 'Document owner name'
 }, {
   name: 'document_number',
   label: 'Document Number',
   type: 'text',
   secure: true,
-  placeholder: 'XXXXXXXXXX'
+  placeholder: 'e.g. ABC1234567'
 }, {
   name: 'issue_date',
   label: 'Issue Date',
@@ -191,14 +305,16 @@ const GENERAL_DOCUMENT_FIELDS: FormField[] = [{
   label: 'Expiry Date',
   type: 'date'
 }, {
-  name: 'issuing_authority',
-  label: 'Issuing Authority',
-  type: 'text',
-  placeholder: 'e.g. Government of India'
+  name: 'file_attachment_file',
+  label: 'Upload Document',
+  type: 'file',
+  placeholder: 'Select PDF or image file',
+  accept: '.pdf,.jpg,.jpeg,.png,.webp'
 }, {
-  name: 'file_attachment',
-  label: 'Attachment',
-  type: 'file'
+  name: 'notes',
+  label: 'Notes',
+  type: 'textarea',
+  placeholder: 'Additional notes about the document'
 }];
 
 export function HomePage() {
@@ -234,6 +350,76 @@ export function HomePage() {
     create: createWebsite
   } = useSupabase<Website>('websites');
 
+  const getFieldsWithOptions = (type: string): FormField[] => {
+    switch (type) {
+      case 'bank-accounts': {
+        const fields = [...BANK_ACCOUNT_FIELDS];
+        const bankNameOptions = Array.from(new Set(bankAccounts.map(a => a.bank_name).filter(Boolean))) as string[];
+        const branchOptions = Array.from(new Set(bankAccounts.map(a => a.branch).filter(Boolean))) as string[];
+        const ownerOptions = Array.from(new Set(bankAccounts.map(a => a.account_owner).filter(Boolean))) as string[];
+        const statusOptions = Array.from(new Set(bankAccounts.map(a => a.status).filter(Boolean))) as string[];
+        
+        return fields.map(f => {
+          if (f.name === 'bank_name') return { ...f, type: 'select', selectWithAdd: true, options: bankNameOptions };
+          if (f.name === 'branch') return { ...f, type: 'select', selectWithAdd: true, options: branchOptions };
+          if (f.name === 'account_owner') return { ...f, type: 'select', selectWithAdd: true, options: ownerOptions };
+          if (f.name === 'status') return { ...f, type: 'select', selectWithAdd: true, options: statusOptions };
+          return f;
+        });
+      }
+      case 'credit-cards': {
+        const fields = [...CREDIT_CARD_FIELDS];
+        const bankNameOptions = Array.from(new Set(creditCards.map(a => (a as any).bank_name).filter(Boolean))) as string[];
+        const statusOptions = Array.from(new Set(creditCards.map(a => (a as any).status).filter(Boolean))) as string[];
+        
+        return fields.map(f => {
+          if (f.name === 'bank_name') return { ...f, type: 'select', selectWithAdd: true, options: bankNameOptions };
+          if (f.name === 'status') return { ...f, type: 'select', selectWithAdd: true, options: statusOptions };
+          return f;
+        });
+      }
+      case 'documents': {
+        const fields = [...GENERAL_DOCUMENT_FIELDS];
+        const docNameOptions = Array.from(new Set(generalDocuments.map(a => a.document_name).filter(Boolean))) as string[];
+        const ownerOptions = Array.from(new Set(generalDocuments.map(a => a.account_owner).filter(Boolean))) as string[];
+        
+        return fields.map(f => {
+          if (f.name === 'document_name') return { ...f, type: 'select', selectWithAdd: true, options: docNameOptions };
+          if (f.name === 'account_owner') return { ...f, type: 'select', selectWithAdd: true, options: ownerOptions };
+          return f;
+        });
+      }
+      case 'insurance': {
+        const fields = [...INSURANCE_POLICY_FIELDS];
+        const policyTypeOptions = Array.from(new Set(insurancePolicies.map(a => a.policy_type).filter(Boolean))) as string[];
+        const policyNameOptions = Array.from(new Set(insurancePolicies.map(a => a.policy_name).filter(Boolean))) as string[];
+        const nomineeOptions = Array.from(new Set(insurancePolicies.map(a => a.nominee_name).filter(Boolean))) as string[];
+        
+        return fields.map(f => {
+          if (f.name === 'policy_type') return { ...f, type: 'select', selectWithAdd: true, options: policyTypeOptions };
+          if (f.name === 'policy_name') return { ...f, type: 'select', selectWithAdd: true, options: policyNameOptions };
+          if (f.name === 'nominee_name') return { ...f, type: 'select', selectWithAdd: true, options: nomineeOptions };
+          return f;
+        });
+      }
+      case 'websites': {
+        const fields = [...WEBSITE_FIELDS];
+        const ownerOptions = Array.from(new Set(websites.map(a => a.account_owner).filter(Boolean))) as string[];
+        const accountTypeOptions = Array.from(new Set(websites.map(a => a.account_type).filter(Boolean))) as string[];
+        const webNameOptions = Array.from(new Set(websites.map(a => a.short_web_name).filter(Boolean))) as string[];
+        
+        return fields.map(f => {
+          if (f.name === 'account_owner') return { ...f, type: 'select', selectWithAdd: true, options: ownerOptions };
+          if (f.name === 'account_type') return { ...f, type: 'select', selectWithAdd: true, options: accountTypeOptions };
+          if (f.name === 'short_web_name') return { ...f, type: 'select', selectWithAdd: true, options: webNameOptions };
+          return f;
+        });
+      }
+      default:
+        return [];
+    }
+  };
+
   const menuOptions = [
     {
       label: 'Bank Accounts',
@@ -254,12 +440,12 @@ export function HomePage() {
       }
     },
     {
-      label: 'Websites Info',
-      icon: <Globe className="w-5 h-5" />,
-      color: 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400',
+      label: 'General Documents',
+      icon: <FileText className="w-5 h-5" />,
+      color: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
       onClick: () => {
         setIsMenuOpen(false);
-        setOpenFormType('websites');
+        setOpenFormType('documents');
       }
     },
     {
@@ -272,12 +458,12 @@ export function HomePage() {
       }
     },
     {
-      label: 'General Documents',
-      icon: <FileText className="w-5 h-5" />,
-      color: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
+      label: 'Websites Info',
+      icon: <Globe className="w-5 h-5" />,
+      color: 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400',
       onClick: () => {
         setIsMenuOpen(false);
-        setOpenFormType('documents');
+        setOpenFormType('websites');
       }
     }
   ];
@@ -300,20 +486,7 @@ export function HomePage() {
   };
 
   const getFormFields = () => {
-    switch (openFormType) {
-      case 'bank-accounts':
-        return BANK_ACCOUNT_FIELDS;
-      case 'credit-cards':
-        return CREDIT_CARD_FIELDS;
-      case 'websites':
-        return WEBSITE_FIELDS;
-      case 'insurance':
-        return INSURANCE_POLICY_FIELDS;
-      case 'documents':
-        return GENERAL_DOCUMENT_FIELDS;
-      default:
-        return [];
-    }
+    return openFormType ? getFieldsWithOptions(openFormType) : [];
   };
 
   const handleFormSubmit = async (formData: Record<string, any>) => {
@@ -332,6 +505,58 @@ export function HomePage() {
         break;
       case 'documents':
         await createGeneralDocument(formData);
+        break;
+    }
+  };
+
+  const handleFieldOptionsChange = (fieldName: string, newOption: string) => {
+    if (!openFormType) return;
+
+    switch (openFormType) {
+      case 'bank-accounts':
+        if (['bank_name', 'branch', 'account_owner', 'status'].includes(fieldName)) {
+          const fields = getFieldsWithOptions('bank-accounts');
+          const field = fields.find(f => f.name === fieldName);
+          if (field && field.options && !field.options.includes(newOption)) {
+            field.options.push(newOption);
+          }
+        }
+        break;
+      case 'credit-cards':
+        if (['bank_name', 'status'].includes(fieldName)) {
+          const fields = getFieldsWithOptions('credit-cards');
+          const field = fields.find(f => f.name === fieldName);
+          if (field && field.options && !field.options.includes(newOption)) {
+            field.options.push(newOption);
+          }
+        }
+        break;
+      case 'documents':
+        if (['document_name', 'account_owner'].includes(fieldName)) {
+          const fields = getFieldsWithOptions('documents');
+          const field = fields.find(f => f.name === fieldName);
+          if (field && field.options && !field.options.includes(newOption)) {
+            field.options.push(newOption);
+          }
+        }
+        break;
+      case 'insurance':
+        if (['policy_type', 'policy_name', 'nominee_name'].includes(fieldName)) {
+          const fields = getFieldsWithOptions('insurance');
+          const field = fields.find(f => f.name === fieldName);
+          if (field && field.options && !field.options.includes(newOption)) {
+            field.options.push(newOption);
+          }
+        }
+        break;
+      case 'websites':
+        if (['account_owner', 'account_type', 'short_web_name'].includes(fieldName)) {
+          const fields = getFieldsWithOptions('websites');
+          const field = fields.find(f => f.name === fieldName);
+          if (field && field.options && !field.options.includes(newOption)) {
+            field.options.push(newOption);
+          }
+        }
         break;
     }
   };
@@ -413,6 +638,7 @@ export function HomePage() {
         fields={getFormFields()}
         title={getFormTitle()}
         bucketType={openFormType === 'documents' ? 'documents' : 'documents'}
+        onFieldOptionsChange={handleFieldOptionsChange}
       />
     </div>;
 }

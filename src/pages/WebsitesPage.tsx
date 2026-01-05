@@ -133,8 +133,6 @@ export function WebsitesPage() {
                   setShowItemSelector(true);
                 } else {
                   setEditingItem(itemsByWebsite[0]);
-                  setSelectedOwner(null);
-                  setSelectedWebsite(null);
                   setIsFormOpen(true);
                 }
               }}
@@ -149,8 +147,6 @@ export function WebsitesPage() {
                   setShowItemSelector(true);
                 } else {
                   setDeleteId(itemsByWebsite[0]?.id || null);
-                  setSelectedOwner(null);
-                  setSelectedWebsite(null);
                 }
               }}
               className="text-red-500 hover:text-red-700 dark:hover:text-red-400 p-2"
@@ -414,6 +410,9 @@ export function WebsitesPage() {
         fields={WEBSITE_FIELDS}
         initialData={editingItem}
         title={editingItem ? 'Edit Website Account' : 'Add Website Account'}
+        onFieldOptionsChange={() => {
+          /* no-op */
+        }}
       />
 
       <ConfirmDialog

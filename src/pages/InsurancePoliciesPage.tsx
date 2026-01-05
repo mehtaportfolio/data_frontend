@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { DataForm } from '../components/data/DataForm';
+import { useForm } from 'react-hook-form';
 import { ConfirmDialog } from '../components/data/ConfirmDialog';
+import { SelectItemModal } from '../components/data/SelectItemModal';
+import { MultiFileUpload } from '../components/data/MultiFileUpload';
 import { useSupabase } from '../hooks/useSupabase';
 import { InsurancePolicy, FormField } from '../types';
 import { Home, X, Edit2, Trash2, Plus } from 'lucide-react';
@@ -74,12 +76,6 @@ const getInsurancePolicyFields = (): FormField[] => [{
   label: 'Nominee Date of Birth',
   type: 'date'
 }, {
-  name: 'file_attachment_file',
-  label: 'Upload Policy Document',
-  type: 'file',
-  placeholder: 'Select PDF or image file',
-  accept: '.pdf,.jpg,.jpeg,.png,.webp'
-}, {
   name: 'notes',
   label: 'Notes',
   type: 'textarea',
@@ -100,17 +96,51 @@ export function InsurancePoliciesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InsurancePolicy | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showItemSelector, setShowItemSelector] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'edit' | 'delete' | null>(null);
+  const [policyDocuments, setPolicyDocuments] = useState<string[]>([]);
+  
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting }
+  } = useForm({
+    mode: 'onBlur',
+    defaultValues: editingItem || {}
+  });
 
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
       setEditingItem(null);
       setIsFormOpen(true);
+      setPolicyDocuments([]);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (isFormOpen) {
+      reset(editingItem || {});
+      if (editingItem?.policy_documents) {
+        const docs = Array.isArray(editingItem.policy_documents) 
+          ? editingItem.policy_documents 
+          : [editingItem.policy_documents];
+        setPolicyDocuments(docs);
+      } else {
+        setPolicyDocuments([]);
+      }
+    } else {
+      setPolicyDocuments([]);
+    }
+  }, [isFormOpen, editingItem, reset]);
 
   const uniquePolicyTypes = Array.from(new Set(data.map(item => item.policy_type))).sort();
 
   const policiesByType = selectedPolicyType 
+    ? data.filter(item => item.policy_type === selectedPolicyType)
+    : [];
+
+  const policiesOfSelectedType = selectedPolicyType
     ? data.filter(item => item.policy_type === selectedPolicyType)
     : [];
 
@@ -138,10 +168,13 @@ export function InsurancePoliciesPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                setEditingItem(selectedPolicy);
-                setSelectedPolicyType(null);
-                setSelectedPolicy(null);
-                setIsFormOpen(true);
+                if (policiesOfSelectedType.length > 1) {
+                  setPendingAction('edit');
+                  setShowItemSelector(true);
+                } else {
+                  setEditingItem(selectedPolicy);
+                  setIsFormOpen(true);
+                }
               }}
               className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-2"
             >
@@ -149,9 +182,12 @@ export function InsurancePoliciesPage() {
             </button>
             <button
               onClick={() => {
-                setDeleteId(selectedPolicy?.id || null);
-                setSelectedPolicyType(null);
-                setSelectedPolicy(null);
+                if (policiesOfSelectedType.length > 1) {
+                  setPendingAction('delete');
+                  setShowItemSelector(true);
+                } else {
+                  setDeleteId(selectedPolicy?.id || null);
+                }
               }}
               className="text-red-500 hover:text-red-700 dark:hover:text-red-400 p-2"
             >
@@ -228,17 +264,34 @@ export function InsurancePoliciesPage() {
                 </div>
               )}
 
-              {selectedPolicy.policy_document && (
-                <div className="flex justify-between items-start border-b border-gray-100 dark:border-gray-700 pb-3">
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Policy Document</span>
-                  <a 
-                    href={selectedPolicy.policy_document} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline text-right"
-                  >
-                    View
-                  </a>
+              {selectedPolicy.policy_documents && (Array.isArray(selectedPolicy.policy_documents) ? selectedPolicy.policy_documents.length > 0 : selectedPolicy.policy_documents) && (
+                <div className="border-b border-gray-100 dark:border-gray-700 pb-3">
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Policy Documents</span>
+                  <div className="mt-2 space-y-2">
+                    {Array.isArray(selectedPolicy.policy_documents) ? (
+                      selectedPolicy.policy_documents.map((doc, index) => (
+                        <a
+                          key={index}
+                          href={doc}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          <span>📄</span>
+                          <span className="truncate">{decodeURIComponent(doc.split('/').pop() || `Document ${index + 1}`)}</span>
+                        </a>
+                      ))
+                    ) : (
+                      <a
+                        href={selectedPolicy.policy_documents}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        View
+                      </a>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -351,31 +404,185 @@ export function InsurancePoliciesPage() {
 
       {selectedPolicy && renderDetailsModal()}
 
-      <DataForm
-        isOpen={isFormOpen}
-        onClose={() => {
-          setIsFormOpen(false);
-          setEditingItem(null);
-        }}
-        onSubmit={async formData => {
-          if (editingItem) {
-            await update(editingItem.id, formData);
-          } else {
-            await create(formData);
+      <SelectItemModal
+        isOpen={showItemSelector}
+        items={policiesOfSelectedType}
+        title={`Select Policy`}
+        getItemLabel={(item) => `${item.policy_name}`}
+        getItemDescription={(item) => `Policy#: ${item.policy_number || ''}`}
+        onSelect={(item) => {
+          if (pendingAction === 'edit') {
+            setEditingItem(item);
+            setIsFormOpen(true);
+          } else if (pendingAction === 'delete') {
+            setDeleteId(item.id);
           }
-          setIsFormOpen(false);
-          setEditingItem(null);
-          setSelectedPolicy(null);
-          setSelectedPolicyType(null);
+          setShowItemSelector(false);
+          setPendingAction(null);
         }}
-        fields={getInsurancePolicyFields()}
-        initialData={editingItem}
-        title={editingItem ? 'Edit Policy' : 'Add Policy'}
-        documentName={editingItem?.policy_name || selectedPolicyType}
-        accountOwner={editingItem?.policy_number || selectedPolicyType}
-        bucketType="policy"
-        attachmentFieldName="policy_document"
+        onClose={() => {
+          setShowItemSelector(false);
+          setPendingAction(null);
+        }}
       />
+
+      {isFormOpen && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-end md:items-center justify-center p-4">
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="bg-white dark:bg-gray-900 rounded-t-3xl w-full md:rounded-3xl flex flex-col max-h-[90vh]"
+          >
+            <div className="sticky top-0 flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                {editingItem ? 'Edit Policy' : 'Add Policy'}
+              </h2>
+              <button
+                onClick={() => {
+                  setIsFormOpen(false);
+                  setEditingItem(null);
+                  setShowItemSelector(false);
+                  setPolicyDocuments([]);
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-2"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-4 space-y-4">
+              <form
+                id="policy-form"
+                onSubmit={handleSubmit(async formData => {
+                  const finalData = {
+                    ...formData,
+                    policy_documents: policyDocuments.length > 0 ? policyDocuments : editingItem?.policy_documents || null
+                  };
+                  if (editingItem) {
+                    await update(editingItem.id, finalData);
+                  } else {
+                    await create(finalData);
+                  }
+                  setIsFormOpen(false);
+                  setEditingItem(null);
+                  setShowItemSelector(false);
+                  setPolicyDocuments([]);
+                })}
+                className="space-y-4"
+              >
+                {getInsurancePolicyFields().map(field => (
+                  <div key={field.name}>
+                    {field.type === 'select' ? (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {field.label}
+                        </label>
+                        <select
+                          {...register(field.name, {
+                            required: field.required ? `${field.label} is required` : false
+                          })}
+                          className={`flex h-12 w-full rounded-xl border bg-white px-4 py-2 text-base ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-gray-800 dark:bg-gray-950 dark:ring-offset-gray-950 ${
+                            errors[field.name] ? 'border-red-500' : 'border-gray-200'
+                          }`}
+                        >
+                          <option value="">Select {field.label}</option>
+                          {field.options?.map(opt => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                        {errors[field.name] && (
+                          <p className="text-sm text-red-500">
+                            {errors[field.name]?.message as string}
+                          </p>
+                        )}
+                      </div>
+                    ) : field.type === 'textarea' ? (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {field.label}
+                        </label>
+                        <textarea
+                          {...register(field.name, {
+                            required: field.required ? `${field.label} is required` : false
+                          })}
+                          className={`flex min-h-[80px] w-full rounded-xl border bg-white px-4 py-2 text-base ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-gray-800 dark:bg-gray-950 dark:ring-offset-gray-950 dark:placeholder:text-gray-400 ${
+                            errors[field.name] ? 'border-red-500' : 'border-gray-200'
+                          }`}
+                          placeholder={field.placeholder}
+                        />
+                        {errors[field.name] && (
+                          <p className="text-sm text-red-500">
+                            {errors[field.name]?.message as string}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {field.label}
+                        </label>
+                        <input
+                          type={field.type}
+                          placeholder={field.placeholder}
+                          {...register(field.name, {
+                            required: field.required ? `${field.label} is required` : false
+                          })}
+                          className={`flex h-12 w-full rounded-xl border bg-white px-4 py-2 text-base ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-gray-800 dark:bg-gray-950 dark:ring-offset-gray-950 ${
+                            errors[field.name] ? 'border-red-500' : 'border-gray-200'
+                          }`}
+                        />
+                        {errors[field.name] && (
+                          <p className="text-sm text-red-500">
+                            {errors[field.name]?.message as string}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </form>
+
+              <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+                <MultiFileUpload
+                  existingFiles={editingItem?.policy_documents && Array.isArray(editingItem.policy_documents) ? editingItem.policy_documents : []}
+                  onFilesChange={(files) => setPolicyDocuments(files)}
+                  documentName={editingItem?.policy_name || selectedPolicyType || 'policy'}
+                  accountOwner={editingItem?.policy_number || 'unknown'}
+                  label="Policy Documents"
+                />
+              </div>
+
+              <div className="sticky bottom-0 flex gap-3 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => {
+                    setIsFormOpen(false);
+                    setEditingItem(null);
+                    setShowItemSelector(false);
+                    setPolicyDocuments([]);
+                  }}
+                  type="button"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  form="policy-form"
+                  type="submit"
+                  className="flex-1"
+                  isLoading={isSubmitting}
+                >
+                  {isSubmitting ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       <ConfirmDialog
         isOpen={!!deleteId}

@@ -113,8 +113,6 @@ export function GeneralDocumentsPage() {
                   setShowItemSelector(true);
                 } else {
                   setEditingItem(itemsByOwner[0]);
-                  setSelectedDocName(null);
-                  setSelectedOwner(null);
                   setIsFormOpen(true);
                 }
               }}
@@ -129,8 +127,6 @@ export function GeneralDocumentsPage() {
                   setShowItemSelector(true);
                 } else {
                   setDeleteId(itemsByOwner[0]?.id || null);
-                  setSelectedDocName(null);
-                  setSelectedOwner(null);
                 }
               }}
               className="text-red-500 hover:text-red-700 dark:hover:text-red-400 p-2"
@@ -377,6 +373,9 @@ export function GeneralDocumentsPage() {
         title={editingItem ? 'Edit Document' : 'Add Document'}
         documentName={editingItem?.document_name || selectedDocName}
         accountOwner={editingItem?.account_owner || selectedOwner}
+        onFieldOptionsChange={() => {
+          /* no-op */
+        }}
       />
 
       <ConfirmDialog

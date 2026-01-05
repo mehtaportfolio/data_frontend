@@ -334,6 +334,7 @@ export function BankDepositPage() {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Amount</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Bank Name</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Branch</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Deposit Type</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300">Actions</th>
                   </tr>
                 </thead>
@@ -356,6 +357,7 @@ export function BankDepositPage() {
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{deposit.bank_name}</td>
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{deposit.branch || '-'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{deposit.deposit_type || '-'}</td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex gap-2 justify-center">
                               <button
@@ -438,6 +440,7 @@ export function BankDepositPage() {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Amount</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Bank Name</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Branch</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Deposit Type</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300">Actions</th>
                 </tr>
               </thead>
@@ -466,6 +469,7 @@ export function BankDepositPage() {
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{deposit.bank_name}</td>
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{deposit.branch || '-'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{deposit.deposit_type || '-'}</td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex gap-2 justify-center">
                               <button

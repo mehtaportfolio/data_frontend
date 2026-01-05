@@ -179,8 +179,6 @@ export function BankAccountsPage() {
                   setShowItemSelector(true);
                 } else {
                   setEditingItem(itemsByOwner[0]);
-                  setSelectedBank(null);
-                  setSelectedOwner(null);
                   setIsFormOpen(true);
                 }
               }}
@@ -195,8 +193,6 @@ export function BankAccountsPage() {
                   setShowItemSelector(true);
                 } else {
                   setDeleteId(itemsByOwner[0]?.id || null);
-                  setSelectedBank(null);
-                  setSelectedOwner(null);
                 }
               }}
               className="text-red-500 hover:text-red-700 dark:hover:text-red-400 p-2"
@@ -520,6 +516,9 @@ export function BankAccountsPage() {
         fields={FIELDS}
         initialData={editingItem}
         title={editingItem ? 'Edit Financial Details' : 'Add Financial Details'}
+        onFieldOptionsChange={() => {
+          /* no-op */
+        }}
       />
 
       <ConfirmDialog

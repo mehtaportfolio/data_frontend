@@ -395,6 +395,9 @@ export function CreditCardsPage() {
         fields={CREDIT_CARD_FIELDS}
         initialData={editingItem}
         title={editingItem ? 'Edit Credit Card' : 'Add Credit Card'}
+        onFieldOptionsChange={() => {
+          /* no-op */
+        }}
       />
 
       <ConfirmDialog

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { FormField } from '../../types';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { SelectWithAdd } from './SelectWithAdd';
 import { toast } from 'sonner';
 import { uploadDocumentFile, deleteDocumentFile, uploadPolicyFile, deletePolicyFile } from '../../utils/documentUpload';
 import { Download, X } from 'lucide-react';
@@ -18,6 +19,7 @@ interface DataFormProps {
   accountOwner?: string;
   bucketType?: 'documents' | 'policy';
   attachmentFieldName?: string;
+  onFieldOptionsChange?: (fieldName: string, newOption: string) => void;
 }
 export function DataForm({
   isOpen,
@@ -29,12 +31,15 @@ export function DataForm({
   documentName,
   accountOwner,
   bucketType = 'documents',
-  attachmentFieldName = 'file_attachment'
+  attachmentFieldName = 'file_attachment',
+  onFieldOptionsChange
 }: DataFormProps) {
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    control,
     formState: {
       errors,
       isSubmitting
@@ -43,6 +48,8 @@ export function DataForm({
     mode: 'onBlur',
     defaultValues: initialData || {}
   });
+
+  const formValues = useWatch({ control });
 
   const [isUploading, setIsUploading] = useState(false);
   const [existingAttachment, setExistingAttachment] = useState<string | null>(null);
@@ -143,9 +150,39 @@ export function DataForm({
         </div>}>
       <form id="data-form" onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         {fields.map(field => <div key={field.name}>
-            {field.type === 'select' ? <div className="space-y-2">
+            {field.type === 'select' ? field.selectWithAdd ? (
+              <div>
+                <SelectWithAdd
+                  label={field.label}
+                  value={formValues[field.name] || ''}
+                  onChange={(value) => {
+                    setValue(field.name, value);
+                  }}
+                  options={field.options || []}
+                  onAddNew={(newValue) => {
+                    if (onFieldOptionsChange) {
+                      onFieldOptionsChange(field.name, newValue);
+                    }
+                    if (field.options && !field.options.includes(newValue)) {
+                      field.options.push(newValue);
+                    }
+                  }}
+                  error={errors[field.name]?.message as string}
+                  required={field.required}
+                  placeholder={field.placeholder}
+                />
+                <input
+                  type="hidden"
+                  {...register(field.name, {
+                    required: field.required ? `${field.label} is required` : false
+                  })}
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {field.label}
+                  {field.required && <span className="text-red-500 ml-1">*</span>}
                 </label>
                 <select {...register(field.name, {
             required: field.required ? `${field.label} is required` : false
@@ -158,9 +195,11 @@ export function DataForm({
                 {errors[field.name] && <p className="text-sm text-red-500">
                     {errors[field.name]?.message as string}
                   </p>}
-              </div> : field.type === 'textarea' ? <div className="space-y-2">
+              </div>
+            ) : field.type === 'textarea' ? <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {field.label}
+                  {field.required && <span className="text-red-500 ml-1">*</span>}
                 </label>
                 <textarea {...register(field.name, {
             required: field.required ? `${field.label} is required` : false
@@ -171,6 +210,7 @@ export function DataForm({
               </div> : field.type === 'file' ? <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {field.label}
+                  {field.required && <span className="text-red-500 ml-1">*</span>}
                 </label>
 
                 {existingAttachment && !shouldDeleteAttachment && (
@@ -210,7 +250,7 @@ export function DataForm({
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {existingAttachment && !shouldDeleteAttachment ? 'Upload a new file to replace the existing attachment' : 'Select a PDF or image file (max 10MB)'}
                 </p>
-              </div> : <Input label={field.label} type={field.type} secure={field.secure} placeholder={field.placeholder} error={errors[field.name]?.message as string} {...register(field.name, {
+              </div> : <Input label={field.label} type={field.type} secure={field.secure} required={field.required} placeholder={field.placeholder} error={errors[field.name]?.message as string} {...register(field.name, {
           required: field.required ? `${field.label} is required` : false
         })} />}
           </div>)}

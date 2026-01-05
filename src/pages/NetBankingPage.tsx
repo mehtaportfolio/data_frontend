@@ -141,7 +141,9 @@ export function NetBankingPage() {
       } else {
         await create(data);
       }
-    }} fields={FIELDS} initialData={editingItem} title={editingItem ? 'Edit Credentials' : 'Add Credentials'} />
+    }} fields={FIELDS} initialData={editingItem} title={editingItem ? 'Edit Credentials' : 'Add Credentials'} onFieldOptionsChange={() => {
+      /* no-op */
+    }} />
 
       <ConfirmDialog isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={async () => {
       if (deleteId) {
