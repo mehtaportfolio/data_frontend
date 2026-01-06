@@ -26,9 +26,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   
   const [state, setState] = useState<AuthState>({
-    isAuthenticated: false,
+    isAuthenticated: !!localStorage.getItem('auth_token'),
     isSetup: storage.isSetup()
   });
+  
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    const isSetup = storage.isSetup();
+    
+    setState({
+      isAuthenticated: !!token,
+      isSetup: isSetup
+    });
+    
+    setIsInitialized(true);
+  }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('auth_token');
@@ -36,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ...prev,
       isAuthenticated: false
     }));
-    navigate('/login');
+    navigate('/login', { replace: true });
   }, [navigate]);
 
   useEffect(() => {
@@ -195,6 +209,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loginWithBiometric,
     changePin
   };
+
+  if (!isInitialized) {
+    return <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-black">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-blue-200 dark:border-blue-900 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+      </div>
+    </div>;
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
