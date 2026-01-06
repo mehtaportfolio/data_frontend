@@ -6,6 +6,7 @@ import { uploadPolicyFile, deletePolicyFile } from '../../utils/documentUpload';
 interface MultiFileUploadProps {
   existingFiles?: string[];
   onFilesChange: (files: string[]) => void;
+  onUploadStateChange?: (isUploading: boolean) => void;
   documentName: string;
   accountOwner: string;
   label?: string;
@@ -15,6 +16,7 @@ interface MultiFileUploadProps {
 export function MultiFileUpload({
   existingFiles = [],
   onFilesChange,
+  onUploadStateChange,
   documentName,
   accountOwner,
   label = 'Attachments',
@@ -22,33 +24,48 @@ export function MultiFileUpload({
 }: MultiFileUploadProps) {
   const [files, setFiles] = useState<string[]>(existingFiles || []);
   const [isUploading, setIsUploading] = useState(false);
+  
+  const updateUploadState = (uploading: boolean) => {
+    setIsUploading(uploading);
+    onUploadStateChange?.(uploading);
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = event.target.files;
     if (!fileList) return;
 
-    setIsUploading(true);
+    updateUploadState(true);
     try {
       const newFiles: string[] = [];
+      console.log('📦 Starting file upload:', { count: fileList.length, documentName, accountOwner });
+      
       for (let i = 0; i < fileList.length; i++) {
         const file = fileList[i];
+        console.log(`⬆️ Uploading file ${i + 1}/${fileList.length}:`, file.name);
         const publicUrl = await uploadPolicyFile(file, documentName, accountOwner);
         if (publicUrl) {
+          console.log(`✅ File ${i + 1} uploaded:`, publicUrl);
           newFiles.push(publicUrl);
+        } else {
+          console.warn(`❌ File ${i + 1} upload failed (no URL returned)`);
         }
       }
 
       if (newFiles.length > 0) {
         const updatedFiles = [...files, ...newFiles];
+        console.log('📝 Updating file list:', { newCount: newFiles.length, totalCount: updatedFiles.length });
         setFiles(updatedFiles);
         onFilesChange(updatedFiles);
         toast.success(`${newFiles.length} file(s) uploaded successfully`);
+      } else {
+        toast.error('No files were successfully uploaded');
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to upload files';
+      console.error('❌ Upload error:', errorMsg);
       toast.error(errorMsg);
     } finally {
-      setIsUploading(false);
+      updateUploadState(false);
       event.target.value = '';
     }
   };

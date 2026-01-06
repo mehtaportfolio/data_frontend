@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { ConfirmDialog } from '../components/data/ConfirmDialog';
 import { SelectItemModal } from '../components/data/SelectItemModal';
 import { MultiFileUpload } from '../components/data/MultiFileUpload';
@@ -99,16 +100,20 @@ export function InsurancePoliciesPage() {
   const [showItemSelector, setShowItemSelector] = useState(false);
   const [pendingAction, setPendingAction] = useState<'edit' | 'delete' | null>(null);
   const [policyDocuments, setPolicyDocuments] = useState<string[]>([]);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting }
   } = useForm({
     mode: 'onBlur',
     defaultValues: editingItem || {}
   });
+  
+  const formValues = watch();
 
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
@@ -125,14 +130,20 @@ export function InsurancePoliciesPage() {
         const docs = Array.isArray(editingItem.policy_documents) 
           ? editingItem.policy_documents 
           : [editingItem.policy_documents];
+        console.log('📂 Loading existing documents:', docs);
         setPolicyDocuments(docs);
       } else {
+        console.log('📂 No existing documents');
         setPolicyDocuments([]);
       }
     } else {
       setPolicyDocuments([]);
     }
   }, [isFormOpen, editingItem, reset]);
+  
+  useEffect(() => {
+    console.log('📋 Current policy documents state:', policyDocuments);
+  }, [policyDocuments]);
 
   const uniquePolicyTypes = Array.from(new Set(data.map(item => item.policy_type))).sort();
 
@@ -456,19 +467,34 @@ export function InsurancePoliciesPage() {
               <form
                 id="policy-form"
                 onSubmit={handleSubmit(async formData => {
+                  const docsToSave = policyDocuments.length > 0 ? policyDocuments : (editingItem?.policy_documents || []);
+                  
                   const finalData = {
                     ...formData,
-                    policy_documents: policyDocuments.length > 0 ? policyDocuments : editingItem?.policy_documents || null
+                    policy_documents: docsToSave.length > 0 ? docsToSave : null
                   };
-                  if (editingItem) {
-                    await update(editingItem.id, finalData);
-                  } else {
-                    await create(finalData);
+                  
+                  console.log('📤 Submitting policy with documents:', {
+                    documentCount: docsToSave.length,
+                    documents: docsToSave,
+                    isEdit: !!editingItem
+                  });
+                  
+                  try {
+                    if (editingItem) {
+                      await update(editingItem.id, finalData);
+                    } else {
+                      await create(finalData);
+                    }
+                    toast.success('Policy saved successfully with ' + (docsToSave.length || 'no') + ' document(s)');
+                    setIsFormOpen(false);
+                    setEditingItem(null);
+                    setShowItemSelector(false);
+                    setPolicyDocuments([]);
+                  } catch (error) {
+                    console.error('❌ Failed to save policy:', error);
+                    toast.error('Failed to save policy. Please try again.');
                   }
-                  setIsFormOpen(false);
-                  setEditingItem(null);
-                  setShowItemSelector(false);
-                  setPolicyDocuments([]);
                 })}
                 className="space-y-4"
               >
@@ -549,7 +575,14 @@ export function InsurancePoliciesPage() {
               <div className="p-4 border-t border-gray-200 dark:border-gray-800">
                 <MultiFileUpload
                   existingFiles={editingItem?.policy_documents && Array.isArray(editingItem.policy_documents) ? editingItem.policy_documents : []}
-                  onFilesChange={(files) => setPolicyDocuments(files)}
+                  onFilesChange={(files) => {
+                    console.log('📥 Files changed in parent:', files);
+                    setPolicyDocuments(files);
+                  }}
+                  onUploadStateChange={(isUploading) => {
+                    console.log('⏳ Upload state changed:', isUploading);
+                    setIsUploadingFiles(isUploading);
+                  }}
                   documentName={editingItem?.policy_name || selectedPolicyType || 'policy'}
                   accountOwner={editingItem?.policy_number || 'unknown'}
                   label="Policy Documents"
@@ -567,6 +600,7 @@ export function InsurancePoliciesPage() {
                     setPolicyDocuments([]);
                   }}
                   type="button"
+                  disabled={isUploadingFiles || isSubmitting}
                 >
                   Cancel
                 </Button>
@@ -574,9 +608,10 @@ export function InsurancePoliciesPage() {
                   form="policy-form"
                   type="submit"
                   className="flex-1"
-                  isLoading={isSubmitting}
+                  isLoading={isSubmitting || isUploadingFiles}
+                  disabled={isUploadingFiles}
                 >
-                  {isSubmitting ? 'Saving...' : 'Save'}
+                  {isUploadingFiles ? 'Uploading files...' : isSubmitting ? 'Saving...' : 'Save'}
                 </Button>
               </div>
             </div>
