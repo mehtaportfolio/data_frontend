@@ -7,6 +7,7 @@ interface MultiFileUploadProps {
   existingFiles?: string[];
   onFilesChange: (files: string[]) => void;
   onUploadStateChange?: (isUploading: boolean) => void;
+  onFilesDeleted?: (deletedCount: number) => void;
   documentName: string;
   accountOwner: string;
   label?: string;
@@ -17,6 +18,7 @@ export function MultiFileUpload({
   existingFiles = [],
   onFilesChange,
   onUploadStateChange,
+  onFilesDeleted,
   documentName,
   accountOwner,
   label = 'Attachments',
@@ -73,15 +75,20 @@ export function MultiFileUpload({
   const handleDeleteFile = async (index: number) => {
     try {
       const fileToDelete = files[index];
+      console.log('🗑️ Deleting file:', fileToDelete);
+      
       const success = await deletePolicyFile(fileToDelete);
       if (success) {
         const updatedFiles = files.filter((_, i) => i !== index);
+        console.log('📝 Updated files after deletion:', updatedFiles);
         setFiles(updatedFiles);
         onFilesChange(updatedFiles);
+        onFilesDeleted?.(1);
         toast.success('File deleted successfully');
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to delete file';
+      console.error('❌ Delete error:', errorMsg);
       toast.error(errorMsg);
     }
   };

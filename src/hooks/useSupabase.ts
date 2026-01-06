@@ -20,7 +20,18 @@ export function useSupabase<T extends {
     try {
       setLoading(true);
       const endpoint = getEndpoint();
-      const result = await api.get<T[]>(endpoint);
+      let result = await api.get<T[]>(endpoint);
+      
+      if (tableName === 'insurance_policies') {
+        result = result.map(item => {
+          const policy = item as any;
+          if (policy.policy_documents) {
+            policy.policy_documents = normalizeDocuments(policy.policy_documents);
+          }
+          return item;
+        });
+      }
+      
       setData(result);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load data';
@@ -28,7 +39,29 @@ export function useSupabase<T extends {
     } finally {
       setLoading(false);
     }
-  }, [getEndpoint]);
+  }, [getEndpoint, tableName]);
+  
+  const normalizeDocuments = (docs: unknown): string[] => {
+    if (!docs) return [];
+    
+    if (Array.isArray(docs)) {
+      return docs.filter(item => typeof item === 'string' && item.length > 0);
+    }
+    
+    if (typeof docs === 'string') {
+      try {
+        const parsed = JSON.parse(docs);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(item => typeof item === 'string' && item.length > 0);
+        }
+        return docs.length > 0 ? [docs] : [];
+      } catch {
+        return docs.length > 0 ? [docs] : [];
+      }
+    }
+    
+    return [];
+  };
 
   useEffect(() => {
     fetch();
@@ -37,7 +70,18 @@ export function useSupabase<T extends {
   const create = async (newItem: Omit<T, 'id' | 'created_at'>) => {
     try {
       const endpoint = getEndpoint();
-      const saved = await api.post<T>(endpoint, newItem as Record<string, unknown>);
+      const itemToSend = { ...newItem } as Record<string, unknown>;
+      
+      if (tableName === 'insurance_policies' && (itemToSend as any).policy_documents) {
+        (itemToSend as any).policy_documents = normalizeDocuments((itemToSend as any).policy_documents);
+      }
+      
+      const saved = await api.post<T>(endpoint, itemToSend);
+      
+      if (tableName === 'insurance_policies' && (saved as any).policy_documents) {
+        (saved as any).policy_documents = normalizeDocuments((saved as any).policy_documents);
+      }
+      
       setData(prev => [saved, ...prev]);
       toast.success('Item added successfully');
       return saved;
@@ -51,7 +95,13 @@ export function useSupabase<T extends {
   const update = async (id: string, updates: Partial<T>) => {
     try {
       const endpoint = `${getEndpoint()}/${id}`;
-      await api.put<T>(endpoint, updates as Record<string, unknown>);
+      const updatesToSend = { ...updates } as Record<string, unknown>;
+      
+      if (tableName === 'insurance_policies' && (updatesToSend as any).policy_documents) {
+        (updatesToSend as any).policy_documents = normalizeDocuments((updatesToSend as any).policy_documents);
+      }
+      
+      await api.put<T>(endpoint, updatesToSend);
       setData(prev => prev.map(item => item.id === id ? {
         ...item,
         ...updates

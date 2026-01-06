@@ -101,6 +101,7 @@ export function InsurancePoliciesPage() {
   const [pendingAction, setPendingAction] = useState<'edit' | 'delete' | null>(null);
   const [policyDocuments, setPolicyDocuments] = useState<string[]>([]);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const [filesDeletedCount, setFilesDeletedCount] = useState(0);
   
   const {
     register,
@@ -127,9 +128,19 @@ export function InsurancePoliciesPage() {
     if (isFormOpen) {
       reset(editingItem || {});
       if (editingItem?.policy_documents) {
-        const docs = Array.isArray(editingItem.policy_documents) 
-          ? editingItem.policy_documents 
-          : [editingItem.policy_documents];
+        let docs: string[] = [];
+        
+        if (Array.isArray(editingItem.policy_documents)) {
+          docs = editingItem.policy_documents;
+        } else if (typeof editingItem.policy_documents === 'string') {
+          try {
+            const parsed = JSON.parse(editingItem.policy_documents);
+            docs = Array.isArray(parsed) ? parsed : [editingItem.policy_documents];
+          } catch {
+            docs = [editingItem.policy_documents];
+          }
+        }
+        
         console.log('📂 Loading existing documents:', docs);
         setPolicyDocuments(docs);
       } else {
@@ -144,6 +155,34 @@ export function InsurancePoliciesPage() {
   useEffect(() => {
     console.log('📋 Current policy documents state:', policyDocuments);
   }, [policyDocuments]);
+  
+  useEffect(() => {
+    if (filesDeletedCount > 0 && editingItem) {
+      const autoSaveDeletedFiles = async () => {
+        try {
+          console.log('💾 Auto-saving after file deletion:', {
+            policyId: editingItem.id,
+            remainingDocs: policyDocuments.length,
+            deletedCount: filesDeletedCount
+          });
+          
+          const finalData = {
+            policy_documents: policyDocuments.length > 0 ? policyDocuments : null
+          };
+          
+          await update(editingItem.id, finalData);
+          toast.success('File deleted and changes saved automatically');
+          setFilesDeletedCount(0);
+        } catch (error) {
+          console.error('❌ Auto-save failed:', error);
+          toast.error('Failed to save after deletion. Please click Save manually.');
+          setFilesDeletedCount(0);
+        }
+      };
+      
+      autoSaveDeletedFiles();
+    }
+  }, [filesDeletedCount, editingItem, policyDocuments, update]);
 
   const uniquePolicyTypes = Array.from(new Set(data.map(item => item.policy_type))).sort();
 
@@ -275,12 +314,25 @@ export function InsurancePoliciesPage() {
                 </div>
               )}
 
-              {selectedPolicy.policy_documents && (Array.isArray(selectedPolicy.policy_documents) ? selectedPolicy.policy_documents.length > 0 : selectedPolicy.policy_documents) && (
-                <div className="border-b border-gray-100 dark:border-gray-700 pb-3">
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Policy Documents</span>
-                  <div className="mt-2 space-y-2">
-                    {Array.isArray(selectedPolicy.policy_documents) ? (
-                      selectedPolicy.policy_documents.map((doc, index) => (
+              {selectedPolicy.policy_documents && (() => {
+                let docs: string[] = [];
+                
+                if (Array.isArray(selectedPolicy.policy_documents)) {
+                  docs = selectedPolicy.policy_documents;
+                } else if (typeof selectedPolicy.policy_documents === 'string') {
+                  try {
+                    const parsed = JSON.parse(selectedPolicy.policy_documents);
+                    docs = Array.isArray(parsed) ? parsed : [selectedPolicy.policy_documents];
+                  } catch {
+                    docs = [selectedPolicy.policy_documents];
+                  }
+                }
+                
+                return docs.length > 0 ? (
+                  <div className="border-b border-gray-100 dark:border-gray-700 pb-3">
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Policy Documents ({docs.length})</span>
+                    <div className="mt-2 space-y-2">
+                      {docs.map((doc, index) => (
                         <a
                           key={index}
                           href={doc}
@@ -289,22 +341,15 @@ export function InsurancePoliciesPage() {
                           className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
                         >
                           <span>📄</span>
-                          <span className="truncate">{decodeURIComponent(doc.split('/').pop() || `Document ${index + 1}`)}</span>
+                          <span className="truncate" title={decodeURIComponent(doc.split('/').pop() || `Document ${index + 1}`)}>
+                            {decodeURIComponent(doc.split('/').pop() || `Document ${index + 1}`)}
+                          </span>
                         </a>
-                      ))
-                    ) : (
-                      <a
-                        href={selectedPolicy.policy_documents}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        View
-                      </a>
-                    )}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : null;
+              })()}
 
               {selectedPolicy.notes && (
                 <div className="flex justify-between items-start pb-3">
@@ -582,6 +627,10 @@ export function InsurancePoliciesPage() {
                   onUploadStateChange={(isUploading) => {
                     console.log('⏳ Upload state changed:', isUploading);
                     setIsUploadingFiles(isUploading);
+                  }}
+                  onFilesDeleted={(count) => {
+                    console.log('🗑️ Files deleted:', count);
+                    setFilesDeletedCount(count);
                   }}
                   documentName={editingItem?.policy_name || selectedPolicyType || 'policy'}
                   accountOwner={editingItem?.policy_number || 'unknown'}
