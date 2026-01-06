@@ -75,21 +75,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (pin: string) => {
     try {
-      console.log('Attempting login with PIN...');
+      console.log('🔐 Attempting login with PIN...');
       const { data, error } = await supabase
         .from('user_master')
         .select('master_password')
         .single();
 
-      console.log('Supabase response:', { data, error });
+      console.log('📡 Supabase response:', { hasData: !!data, error: error?.message });
 
-      if (error || !data) {
-        console.error('Query error:', error);
-        toast.error(`Failed to verify credentials: ${error?.message || 'No data found'}`);
+      if (error) {
+        console.error('❌ Query error:', error);
+        
+        if (error.message.includes('404') || error.message.includes('NOT_FOUND')) {
+          toast.error('Database connection failed. Check Supabase environment variables on Vercel.');
+        } else {
+          toast.error(`Failed to verify credentials: ${error.message}`);
+        }
         return false;
       }
 
-      console.log('Comparing PIN. Entered:', pin, 'Stored:', data.master_password);
+      if (!data) {
+        console.error('❌ No user data found');
+        toast.error('User not found. Please set up your PIN first.');
+        return false;
+      }
+
+      console.log('🔍 Comparing PIN...');
       
       if (data.master_password === pin) {
         localStorage.setItem('auth_token', 'true');
@@ -98,16 +109,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isAuthenticated: true
         }));
         storage.setPinHash(hashPin(pin));
-        toast.success('Logged in successfully');
+        toast.success('✅ Logged in successfully');
         return true;
       }
       
-      console.log('PIN mismatch');
+      console.log('❌ PIN mismatch');
       toast.error('Invalid PIN');
       return false;
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Login error:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      
+      if (message.includes('fetch') || message.includes('network')) {
+        toast.error('Network error. Check your connection and Supabase settings.');
+      } else {
+        toast.error(`Authentication failed: ${message}`);
+      }
       return false;
     }
   }, []);
@@ -212,9 +229,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (!isInitialized) {
     return <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-black">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-blue-200 dark:border-blue-900 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+      <div className="text-center space-y-4">
+        <div className="w-12 h-12 border-4 border-blue-200 dark:border-blue-900 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin mx-auto"></div>
+        <p className="text-gray-600 dark:text-gray-400">Initializing...</p>
+        <p className="text-xs text-gray-400">If this takes too long, check your Supabase settings</p>
       </div>
     </div>;
   }

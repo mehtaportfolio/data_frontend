@@ -1,11 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Get environment variables with fallbacks
-const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY;
 
-// Warn if environment variables are not configured
-if (!import.meta.env?.VITE_SUPABASE_URL || !import.meta.env?.VITE_SUPABASE_ANON_KEY) {
-  console.warn('⚠️ Supabase environment variables not configured.\n' + 'Create a .env file in the project root with:\n' + 'VITE_SUPABASE_URL=your_supabase_url\n' + 'VITE_SUPABASE_ANON_KEY=your_supabase_anon_key\n\n' + 'The app will run with placeholder values for now.');
+if (!supabaseUrl || !supabaseAnonKey) {
+  const missing = [];
+  if (!supabaseUrl) missing.push('VITE_SUPABASE_URL');
+  if (!supabaseAnonKey) missing.push('VITE_SUPABASE_ANON_KEY');
+  
+  console.error('❌ CRITICAL: Missing Supabase environment variables:', missing);
+  console.error('⚠️ Required variables: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
+  console.error('📋 For local development: Create .env file with VITE_ prefix');
+  console.error('🚀 For Vercel deployment: Set in Settings → Environment Variables with VITE_ prefix');
 }
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
+);
