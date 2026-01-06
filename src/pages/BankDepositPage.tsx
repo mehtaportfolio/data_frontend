@@ -2,15 +2,16 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSupabase } from '../hooks/useSupabase';
 import { Deposit } from '../types';
-import { Home, Plus, Edit2, Trash2, X, LogOut } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { ConfirmDialog } from '../components/data/ConfirmDialog';
 import { SelectWithAdd } from '../components/data/SelectWithAdd';
 import { toast } from 'sonner';
+import { PageHeader } from '../components/ui/PageHeader';
 
 export function BankDepositPage() {
   const { logout } = useAuth();
@@ -151,21 +152,12 @@ export function BankDepositPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black pb-24">
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center justify-between p-4 gap-2">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Bank Deposits</h1>
-          <div className="flex items-center gap-2">
-            <Link to="/">
-              <Button size="icon" variant="ghost" className="text-gray-600 dark:text-gray-400">
-                <Home className="w-5 h-5" />
-              </Button>
-            </Link>
-            <Button size="icon" variant="ghost" className="text-gray-600 dark:text-gray-400" onClick={logout}>
-              <LogOut className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Bank Deposits"
+        onLogout={logout}
+        showAddButton={false}
+        showRefreshButton={false}
+      />
 
       <div className="p-6 space-y-6">
         {/* Year Filter with Add Button */}

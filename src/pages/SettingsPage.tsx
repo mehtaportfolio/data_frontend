@@ -3,12 +3,13 @@ import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Moon, Sun, Fingerprint, LogOut, Shield, Home } from 'lucide-react';
+import { Moon, Sun, Fingerprint, Shield } from 'lucide-react';
 import { storage } from '../utils/storage';
 import { biometric } from '../utils/biometric';
 import { ChangePinModal } from '../components/settings/ChangePinModal';
 import { toast } from 'sonner';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '../components/ui/PageHeader';
 export function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isChangePinModalOpen, setIsChangePinModalOpen] = useState(false);
@@ -41,21 +42,12 @@ export function SettingsPage() {
     }
   };
   return <div className="min-h-screen bg-gray-50 dark:bg-black pb-24">
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center justify-between p-4 gap-2">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Settings</h1>
-          <div className="flex items-center gap-2">
-            <Link to="/">
-              <Button size="icon" variant="ghost" className="text-gray-600 dark:text-gray-400">
-                <Home className="w-5 h-5" />
-              </Button>
-            </Link>
-            <Button size="icon" variant="ghost" className="text-gray-600 dark:text-gray-400" onClick={logout}>
-              <LogOut className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Settings"
+        onLogout={logout}
+        showAddButton={false}
+        showRefreshButton={false}
+      />
 
       <div className="p-6 space-y-6">
         <section>

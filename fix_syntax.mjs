@@ -1,1 +1,0 @@
-import fs from \"fs\"; const c = fs.readFileSync(\"src/server/src/routes/insurancePolicies.ts\", \"utf8\"); const f = c.replace(/Promise\\(void\\)/g, \"Promise<void>\"); fs.writeFileSync(\"src/server/src/routes/insurancePolicies.ts\", f); console.log(\"OK\");  

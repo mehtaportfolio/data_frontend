@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { Building2, CreditCard, LogOut, FileText, Shield, Globe, Plus, X, RefreshCw } from 'lucide-react';
+import { Building2, CreditCard, FileText, Shield, Globe } from 'lucide-react';
 import { CategoryCard } from '../components/data/CategoryCard';
 import { DataForm } from '../components/data/DataForm';
 import { useAuth } from '../context/AuthContext';
-import { Button } from '../components/ui/Button';
 import { useSupabase } from '../hooks/useSupabase';
 import { useServiceHealth } from '../hooks/useServiceHealth';
 import { BankAccount, GeneralDocument, InsurancePolicy, Website, FormField } from '../types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { PageHeader } from '../components/ui/PageHeader';
 
 const BANK_ACCOUNT_FIELDS: FormField[] = [{
   name: 'bank_name',
@@ -562,66 +561,17 @@ export function HomePage() {
   };
 
   return <div className="min-h-screen bg-gray-50 dark:bg-black pb-24">
-      <header className="px-6 py-2 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Dashboard
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Welcome to Data 360
-            </p>
-          </div>
-          <div className="flex items-center gap-2 relative">
-            <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => checkServiceStatus()}
-              disabled={isLoading}
-              title="Check backend service status"
-            >
-              <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={logout}>
-              <LogOut className="w-5 h-5" />
-            </Button>
-            
-            <AnimatePresence>
-              {isMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                  className="absolute right-0 mt-2 top-full w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 z-50"
-                >
-                  <div className="p-3 space-y-2">
-                    {menuOptions.map((option, index) => (
-                      <motion.button
-                        key={index}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 10 }}
-                        transition={{ delay: index * 0.05 }}
-                        onClick={option.onClick}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${option.color} hover:opacity-80`}
-                      >
-                        <div className="flex-shrink-0">{option.icon}</div>
-                        <span className="flex-1 text-left font-medium text-sm">
-                          {option.label}
-                        </span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        title="Dashboard"
+        subtitle="Welcome to Data 360"
+        onLogout={logout}
+        onRefresh={() => checkServiceStatus()}
+        isRefreshLoading={isLoading}
+        onAddClick={() => setIsMenuOpen(!isMenuOpen)}
+        menuOptions={menuOptions}
+        showAddButton={true}
+        showRefreshButton={true}
+      />
 
       <main className="p-6 space-y-4">
         <CategoryCard title="Bank Accounts" count={bankAccounts.length} icon={<Building2 className="w-6 h-6" />} to="/bank-accounts" color="bg-blue-500" />

@@ -139,7 +139,7 @@ export function DebitCardsPage() {
       } else {
         await create(data);
       }
-    }} fields={FIELDS} initialData={editingItem} title={editingItem ? 'Edit Card' : 'Add Card'} onFieldOptionsChange={() => {}} />
+    }} fields={FIELDS} initialData={editingItem} title={editingItem ? 'Edit Card' : 'Add Card'} />
 
       <ConfirmDialog isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={async () => {
       if (deleteId) {

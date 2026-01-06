@@ -107,14 +107,11 @@ export function InsurancePoliciesPage() {
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors, isSubmitting }
   } = useForm({
     mode: 'onBlur',
     defaultValues: editingItem || {}
   });
-  
-  const formValues = watch();
 
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
