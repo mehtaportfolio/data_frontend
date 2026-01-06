@@ -26,21 +26,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   
   const [state, setState] = useState<AuthState>({
-    isAuthenticated: !!localStorage.getItem('auth_token'),
+    isAuthenticated: false,
     isSetup: storage.isSetup()
   });
   
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
     const isSetup = storage.isSetup();
     
     setState({
-      isAuthenticated: !!token,
+      isAuthenticated: false,
       isSetup: isSetup
     });
     
+    localStorage.removeItem('auth_token');
     setIsInitialized(true);
   }, []);
 

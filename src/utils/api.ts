@@ -15,14 +15,17 @@ class ApiClient {
   }
 
   async get<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const fullUrl = `${API_URL}${endpoint}`;
+    console.log('[API] GET', fullUrl);
+    const response = await fetch(fullUrl, {
       method: 'GET',
       headers: this.getHeaders(),
     });
 
     if (!response.ok) {
+      console.error('[API] Error:', response.status, fullUrl);
       const error = (await response.json()) as ApiResponse<null>;
-      throw new Error(error.error || 'API request failed');
+      throw new Error(error.error || `API request failed (${response.status})`);
     }
 
     const result = (await response.json()) as ApiResponse<T>;
