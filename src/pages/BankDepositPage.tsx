@@ -618,7 +618,7 @@ export function BankDepositPage() {
             label="Deposit Type"
             value={watch('deposit_type')}
             onChange={(value) => setValue('deposit_type', value)}
-            options={depositTypes}
+            options={Array.from(new Set([...depositTypes, watch('deposit_type')].filter(Boolean))).sort()}
             onAddNew={(newType) => {
               if (!depositTypes.includes(newType)) {
                 setDepositTypes([...depositTypes, newType].sort());
