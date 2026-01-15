@@ -14,6 +14,20 @@ import { Toaster } from './components/ui/Toast';
 import { useOffline } from './hooks/useOffline';
 import { useTheme } from './hooks/useTheme';
 import { BottomNav } from './components/ui/BottomNav';
+import { useServiceHealth } from './hooks/useServiceHealth';
+import { useEffect } from 'react';
+
+function ServiceHealthManager() {
+  const { checkServiceStatus } = useServiceHealth();
+  
+  useEffect(() => {
+    // Automatically check and restart service if needed on app mount
+    checkServiceStatus(true);
+  }, []);
+
+  return null;
+}
+
 function ProtectedLayout() {
   const {
     isAuthenticated
@@ -50,6 +64,7 @@ function AppRoutes() {
 export default function App() {
   return <Router>
       <AuthProvider>
+        <ServiceHealthManager />
         <AppRoutes />
       </AuthProvider>
       <Toaster />

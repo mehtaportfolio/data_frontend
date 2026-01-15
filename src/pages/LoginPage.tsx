@@ -5,6 +5,7 @@ import { PinInput } from '../components/auth/PinInput';
 import { BiometricButton } from '../components/auth/BiometricButton';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+
 export function LoginPage() {
   const {
     login,

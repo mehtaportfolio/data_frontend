@@ -12,9 +12,9 @@ interface ServiceHealthResponse {
 export function useServiceHealth() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const checkServiceStatus = async (): Promise<boolean> => {
+  const checkServiceStatus = async (silent: boolean = false): Promise<boolean> => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       
       const response = await fetch(`${apiUrl}/api/service/status`, {
@@ -31,19 +31,19 @@ export function useServiceHealth() {
       const data = (await response.json()) as ServiceHealthResponse;
       
       if (data.success && data.isRunning) {
-        toast.success('✓ Backend service is running');
+        if (!silent) toast.success('✓ Backend service is running');
         return true;
       } else {
-        toast.error('✗ Backend service is not running. Attempting to restart...');
+        if (!silent) toast.error('✗ Backend service is not running. Attempting to restart...');
         await restartService();
         return false;
       }
     } catch (error) {
-      toast.error('Failed to check backend status. Attempting to restart...');
+      if (!silent) toast.error('Failed to check backend status. Attempting to restart...');
       await restartService();
       return false;
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
