@@ -75,7 +75,12 @@ export function WebsitesPage() {
     create,
     update,
     remove
-  } = useSupabase<Website>('websites');
+  } = useSupabase<Website>('websites', [
+    'login_id',
+    'login_password',
+    'two_step_password',
+    'other_password'
+  ]);
   
   const [selectedOwner, setSelectedOwner] = useState<string | null>(null);
   const [selectedWebsite, setSelectedWebsite] = useState<string | null>(null);

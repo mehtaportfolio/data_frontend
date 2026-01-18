@@ -3,7 +3,8 @@ const STORAGE_KEYS = {
   PIN_HASH: 'secure_vault_pin_hash',
   BIOMETRIC_ENABLED: 'secure_vault_biometric',
   IS_SETUP: 'secure_vault_is_setup',
-  USER_ID: 'secure_vault_user_id'
+  USER_ID: 'secure_vault_user_id',
+  ENCRYPTION_KEY: 'secure_vault_encryption_key'
 };
 
 const generateUUID = (): string => {
@@ -31,5 +32,11 @@ export const storage = {
     }
     return userId;
   },
-  clear: () => localStorage.clear()
+  clear: () => {
+    localStorage.clear();
+    sessionStorage.clear();
+  },
+  getEncryptionKey: () => sessionStorage.getItem(STORAGE_KEYS.ENCRYPTION_KEY),
+  setEncryptionKey: (key: string) => sessionStorage.setItem(STORAGE_KEYS.ENCRYPTION_KEY, key),
+  clearEncryptionKey: () => sessionStorage.removeItem(STORAGE_KEYS.ENCRYPTION_KEY)
 };
