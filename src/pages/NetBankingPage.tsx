@@ -48,11 +48,7 @@ export function NetBankingPage() {
     create,
     update,
     remove
-  } = useSupabase<NetBanking>('net_banking', [
-    'customer_id',
-    'password',
-    'transaction_password'
-  ]);
+  } = useSupabase<NetBanking>('net_banking');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<NetBanking | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);

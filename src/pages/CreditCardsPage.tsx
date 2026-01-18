@@ -78,13 +78,7 @@ export function CreditCardsPage() {
     create,
     update,
     remove
-  } = useSupabase<CreditCard>('credit_cards', [
-    'credit_card_number',
-    'cvv_number',
-    'pin',
-    'internet_banking_id',
-    'login_password'
-  ]);
+  } = useSupabase<CreditCard>('credit_cards');
   
   const [activeTab, setActiveTab] = useState<'active' | 'closed'>('active');
   const [selectedBank, setSelectedBank] = useState<string | null>(null);

@@ -90,9 +90,7 @@ export function InsurancePoliciesPage() {
     create,
     update,
     remove
-  } = useSupabase<InsurancePolicy>('insurance_policies', [
-    'policy_number'
-  ]);
+  } = useSupabase<InsurancePolicy>('insurance_policies');
   
   const [selectedPolicyType, setSelectedPolicyType] = useState<string | null>(null);
   const [selectedPolicy, setSelectedPolicy] = useState<InsurancePolicy | null>(null);

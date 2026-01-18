@@ -110,16 +110,7 @@ export function BankAccountsPage() {
     create,
     update,
     remove
-  } = useSupabase<BankAccount>('bank_accounts', [
-    'account_number',
-    'card_number',
-    'cvv',
-    'atm_pin',
-    'customer_id',
-    'login_password',
-    'transaction_password',
-    'upi_pin'
-  ]);
+  } = useSupabase<BankAccount>('bank_accounts');
   
   const [activeTab, setActiveTab] = useState<'active' | 'closed'>('active');
   const [selectedBank, setSelectedBank] = useState<string | null>(null);

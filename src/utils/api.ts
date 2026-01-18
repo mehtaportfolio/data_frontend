@@ -9,10 +9,8 @@ export interface ApiResponse<T> {
 
 class ApiClient {
   private getHeaders() {
-    const token = localStorage.getItem('auth_token');
     return {
       'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     };
   }
 

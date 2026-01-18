@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storage } from '../utils/storage';
-import { hashPin, generateEncryptionKey } from '../utils/encryption';
-import { api } from '../utils/api';
+import { hashPin } from '../utils/encryption';
+import { supabase } from '../utils/supabase';
 import { toast } from 'sonner';
-
 interface AuthState {
   isAuthenticated: boolean;
   isSetup: boolean;
 }
-
 export function useAuth() {
   const [state, setState] = useState<AuthState>({
     isAuthenticated: localStorage.getItem('auth_token') !== null,
@@ -19,7 +17,6 @@ export function useAuth() {
 
   const logout = useCallback(() => {
     localStorage.removeItem('auth_token');
-    storage.clearEncryptionKey();
     setState(prev => ({
       ...prev,
       isAuthenticated: false
@@ -36,7 +33,7 @@ export function useAuth() {
         timeoutId = setTimeout(() => {
           logout();
           toast.info('Session timed out due to inactivity');
-        }, 30 * 60 * 1000); // 30 minutes
+        }, 5 * 60 * 1000); // 5 minutes
       }
     };
     const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
@@ -47,33 +44,41 @@ export function useAuth() {
       events.forEach(event => document.removeEventListener(event, resetTimer));
     };
   }, [state.isAuthenticated, logout]);
-
   const login = useCallback(async (pin: string) => {
     try {
-      console.log('Attempting login with PIN via backend...');
-      const response = await api.post<{ token: string; user: { id: string } }>('/api/auth/login', { pin });
+      console.log('Attempting login with PIN...');
+      const { data, error } = await supabase
+        .from('user_master')
+        .select('master_password')
+        .single();
 
-      if (response && response.token) {
-        localStorage.setItem('auth_token', response.token);
-        
-        // Generate and store the encryption key in sessionStorage
-        const encryptionKey = generateEncryptionKey(pin);
-        storage.setEncryptionKey(encryptionKey);
-        
+      console.log('Supabase response:', { data, error });
+
+      if (error || !data) {
+        console.error('Query error:', error);
+        toast.error(`Failed to verify credentials: ${error?.message || 'No data found'}`);
+        return false;
+      }
+
+      console.log('Comparing PIN. Entered:', pin, 'Stored:', data.master_password);
+      
+      if (data.master_password === pin) {
+        localStorage.setItem('auth_token', 'true');
         setState(prev => ({
           ...prev,
           isAuthenticated: true
         }));
-        
         storage.setPinHash(hashPin(pin));
         toast.success('Logged in successfully');
         return true;
       }
       
+      console.log('PIN mismatch');
+      toast.error('Invalid PIN');
       return false;
     } catch (error) {
       console.error('Login error:', error);
-      toast.error(error instanceof Error ? error.message : 'Authentication failed');
+      toast.error(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
   }, []);
@@ -81,11 +86,6 @@ export function useAuth() {
     const hash = hashPin(pin);
     storage.setPinHash(hash);
     storage.setSetup(true);
-    
-    // Generate and store the encryption key in sessionStorage
-    const encryptionKey = generateEncryptionKey(pin);
-    storage.setEncryptionKey(encryptionKey);
-    
     localStorage.setItem('auth_token', 'true');
     setState({
       isAuthenticated: true,

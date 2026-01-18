@@ -55,9 +55,7 @@ export function GeneralDocumentsPage() {
     create,
     update,
     remove
-  } = useSupabase<GeneralDocument>('general_documents', [
-    'document_number'
-  ]);
+  } = useSupabase<GeneralDocument>('general_documents');
   
   const [selectedDocName, setSelectedDocName] = useState<string | null>(null);
   const [selectedOwner, setSelectedOwner] = useState<string | null>(null);
