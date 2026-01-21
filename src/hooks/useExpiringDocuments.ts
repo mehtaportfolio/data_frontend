@@ -50,14 +50,19 @@ export function useExpiringDocuments() {
       return daysLeft <= 30;
     };
 
+    const isActiveStatus = (status?: string): boolean => {
+      if (!status) return true; // Default to true if no status column exists or is empty, but user said it's valid for debit/credit
+      return status.toLowerCase().includes('active');
+    };
+
     const items: ExpiringItem[] = [];
 
     bankAccounts.forEach(account => {
-      if (account.expiry_date && isExpiringSoonOrExpired(account.expiry_date)) {
+      if (account.expiry_date && isExpiringSoonOrExpired(account.expiry_date) && isActiveStatus(account.status)) {
         const notifId = `bank_accounts-${account.id}`;
         if (!dismissedNotifications.has(notifId)) {
           const cardType = account.card_number ? 'Debit Card' : 'Bank Account';
-          const cardLast4 = account.card_number ? account.card_number.slice(-4) : account.account_number?.slice(-4);
+          const cardLast4 = account.account_number?.slice(-4);
           const ownerInfo = account.account_owner ? ` - ${account.account_owner}` : '';
           items.push({
             id: account.id,
@@ -71,7 +76,7 @@ export function useExpiringDocuments() {
     });
 
     creditCards.forEach(card => {
-      if (card.expiry_date && isExpiringSoonOrExpired(card.expiry_date)) {
+      if (card.expiry_date && isExpiringSoonOrExpired(card.expiry_date) && isActiveStatus(card.status)) {
         const notifId = `credit_cards-${card.id}`;
         if (!dismissedNotifications.has(notifId)) {
           const cardLast4 = card.credit_card_number ? card.credit_card_number.slice(-4) : '';
