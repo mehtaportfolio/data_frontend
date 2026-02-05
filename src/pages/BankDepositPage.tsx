@@ -46,8 +46,8 @@ export function BankDepositPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDeposit, setEditingDeposit] = useState<Deposit | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [bankNames, setBankNames] = useState<string[]>(['PNB', 'HDFC Bank', 'ICICI Bank', 'SBI', 'Axis Bank']);
-  const [branches, setBranches] = useState<string[]>(['MP', 'Delhi', 'Mumbai', 'Bangalore', 'Pune']);
+  const [bankNames, setBankNames] = useState<string[]>(['PNB', 'SBI', 'AXIS']);
+  const [branches, setBranches] = useState<string[]>(['MP', 'RJ', 'GJ']);
   const [depositTypes, setDepositTypes] = useState<string[]>([]);
   const [showYearModal, setShowYearModal] = useState(false);
   const [selectedYearForModal, setSelectedYearForModal] = useState<string | null>(null);
