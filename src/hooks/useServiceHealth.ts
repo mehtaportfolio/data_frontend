@@ -12,7 +12,7 @@ interface ServiceHealthResponse {
 export function useServiceHealth() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const checkServiceStatus = async (silent: boolean = false): Promise<boolean> => {
+  const checkServiceStatus = async (silent = false): Promise<boolean> => {
     try {
       if (!silent) setIsLoading(true);
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';

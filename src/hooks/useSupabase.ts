@@ -4,9 +4,13 @@ import { toast } from 'sonner';
 
 export function useSupabase<T extends {
   id: string;
-}>(tableName: string) {
-  const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(true);
+}>(tableName: string, options: { enabled?: boolean } = { enabled: true }) {
+  const cacheKey = `cache_${tableName}`;
+  const [data, setData] = useState<T[]>(() => {
+    const cached = localStorage.getItem(cacheKey);
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [loading, setLoading] = useState(!localStorage.getItem(cacheKey) && options.enabled);
 
   const getEndpoint = useCallback(() => {
     if (tableName === 'bank_accounts') return '/api/bank-accounts';
@@ -33,13 +37,14 @@ export function useSupabase<T extends {
       }
       
       setData(result);
+      localStorage.setItem(cacheKey, JSON.stringify(result));
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load data';
       toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [getEndpoint, tableName]);
+  }, [getEndpoint, tableName, cacheKey]);
   
   const normalizeDocuments = (docs: unknown): string[] => {
     if (!docs) return [];
@@ -64,8 +69,10 @@ export function useSupabase<T extends {
   };
 
   useEffect(() => {
-    fetch();
-  }, [fetch]);
+    if (options.enabled) {
+      fetch();
+    }
+  }, [fetch, options.enabled]);
 
   const create = async (newItem: Omit<T, 'id' | 'created_at'>) => {
     try {
@@ -82,7 +89,11 @@ export function useSupabase<T extends {
         (saved as any).policy_documents = normalizeDocuments((saved as any).policy_documents);
       }
       
-      setData(prev => [saved, ...prev]);
+      setData(prev => {
+        const updated = [saved, ...prev];
+        localStorage.setItem(cacheKey, JSON.stringify(updated));
+        return updated;
+      });
       toast.success('Item added successfully');
       return saved;
     } catch (error: unknown) {
@@ -102,10 +113,14 @@ export function useSupabase<T extends {
       }
       
       await api.put<T>(endpoint, updatesToSend);
-      setData(prev => prev.map(item => item.id === id ? {
-        ...item,
-        ...updates
-      } : item));
+      setData(prev => {
+        const updated = prev.map(item => item.id === id ? {
+          ...item,
+          ...updates
+        } : item);
+        localStorage.setItem(cacheKey, JSON.stringify(updated));
+        return updated;
+      });
       toast.success('Item updated successfully');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update item';
@@ -118,7 +133,11 @@ export function useSupabase<T extends {
     try {
       const endpoint = `${getEndpoint()}/${id}`;
       await api.delete(endpoint);
-      setData(prev => prev.filter(item => item.id !== id));
+      setData(prev => {
+        const updated = prev.filter(item => item.id !== id);
+        localStorage.setItem(cacheKey, JSON.stringify(updated));
+        return updated;
+      });
       toast.success('Item deleted successfully');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete item';

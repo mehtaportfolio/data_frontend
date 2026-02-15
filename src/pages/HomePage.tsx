@@ -4,6 +4,7 @@ import { CategoryCard } from '../components/data/CategoryCard';
 import { DataForm } from '../components/data/DataForm';
 import { useAuth } from '../context/AuthContext';
 import { useSupabase } from '../hooks/useSupabase';
+import { useDashboard } from '../hooks/useDashboard';
 import { useServiceHealth } from '../hooks/useServiceHealth';
 import { BankAccount, GeneralDocument, InsurancePolicy, Website, FormField } from '../types';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -324,30 +325,35 @@ export function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openFormType, setOpenFormType] = useState<'bank-accounts' | 'credit-cards' | 'websites' | 'insurance' | 'documents' | null>(null);
   
+  const { data: dashboardData } = useDashboard();
+
   const {
-    data: bankAccounts,
     create: createBankAccount
-  } = useSupabase<BankAccount>('bank_accounts');
+  } = useSupabase<BankAccount>('bank_accounts', { enabled: false });
 
   const {
-    data: creditCards,
     create: createCreditCard
-  } = useSupabase<BankAccount>('credit_cards');
+  } = useSupabase<BankAccount>('credit_cards', { enabled: false });
 
   const {
-    data: generalDocuments,
     create: createGeneralDocument
-  } = useSupabase<GeneralDocument>('general_documents');
+  } = useSupabase<GeneralDocument>('general_documents', { enabled: false });
 
   const {
-    data: insurancePolicies,
+    data: insurancePoliciesFromSupabase,
     create: createInsurancePolicy
   } = useSupabase<InsurancePolicy>('insurance_policies');
 
   const {
-    data: websites,
+    data: websitesFromSupabase,
     create: createWebsite
   } = useSupabase<Website>('websites');
+
+  const bankAccounts = dashboardData.bank_accounts;
+  const creditCards = dashboardData.credit_cards;
+  const generalDocuments = dashboardData.general_documents;
+  const insurancePolicies = insurancePoliciesFromSupabase.length > 0 ? insurancePoliciesFromSupabase : dashboardData.insurance_policies;
+  const websites = websitesFromSupabase.length > 0 ? websitesFromSupabase : dashboardData.websites;
 
   const getFieldsWithOptions = (type: string): FormField[] => {
     switch (type) {

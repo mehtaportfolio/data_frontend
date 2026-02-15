@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';
 import { PinInput } from '../components/auth/PinInput';
 import { BiometricButton } from '../components/auth/BiometricButton';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { storage } from '../utils/storage';
 
 export function LoginPage() {
   const {
@@ -14,6 +15,18 @@ export function LoginPage() {
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const triggerBiometric = async () => {
+      if (storage.isBiometricEnabled()) {
+        const success = await loginWithBiometric();
+        if (success) {
+          navigate('/');
+        }
+      }
+    };
+    triggerBiometric();
+  }, [loginWithBiometric, navigate]);
 
   const handlePinComplete = async (pin: string) => {
     setIsLoading(true);
