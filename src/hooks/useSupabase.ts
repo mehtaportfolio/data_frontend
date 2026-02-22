@@ -17,6 +17,7 @@ export function useSupabase<T extends {
     if (tableName === 'credit_cards') return '/api/credit-cards';
     if (tableName === 'general_documents') return '/api/general-documents';
     if (tableName === 'insurance_policies') return '/api/insurance-policies';
+    if (tableName === 'dummy_table') return '/api/dummy-table';
     return `/api/${tableName}`;
   }, [tableName]);
 

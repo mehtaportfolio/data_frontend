@@ -73,6 +73,12 @@ export interface Deposit extends BaseEntity {
   deposit_type?: string;
 }
 
+export interface DummyTable extends BaseEntity {
+  sr_no: number;
+  index_no: number;
+  point_no: number;
+}
+
 export interface Website extends BaseEntity {
   account_owner: string;
   account_type?: string;
@@ -86,7 +92,7 @@ export interface Website extends BaseEntity {
   notes?: string;
 }
 
-export type DataType = 'bank_accounts' | 'credit_cards' | 'general_documents' | 'insurance_policies' | 'deposits' | 'websites';
+export type DataType = 'bank_accounts' | 'credit_cards' | 'general_documents' | 'insurance_policies' | 'deposits' | 'websites' | 'dummy_table';
 export interface FormField {
   name: string;
   label: string;
