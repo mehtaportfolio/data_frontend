@@ -75,6 +75,17 @@ export function useSupabase<T extends {
     }
   }, [fetch, options.enabled]);
 
+  useEffect(() => {
+    const handleRefresh = () => {
+      if (options.enabled) {
+        fetch();
+      }
+    };
+
+    window.addEventListener('backend-healthy', handleRefresh);
+    return () => window.removeEventListener('backend-healthy', handleRefresh);
+  }, [fetch, options.enabled]);
+
   const create = async (newItem: Omit<T, 'id' | 'created_at'>) => {
     try {
       const endpoint = getEndpoint();

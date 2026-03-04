@@ -80,6 +80,15 @@ export function useDashboard() {
     fetchDashboard();
   }, [fetchDashboard]);
 
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchDashboard();
+    };
+
+    window.addEventListener('backend-healthy', handleRefresh);
+    return () => window.removeEventListener('backend-healthy', handleRefresh);
+  }, [fetchDashboard]);
+
   const normalizeDocuments = (docs: unknown): string[] => {
     if (!docs) return [];
     
