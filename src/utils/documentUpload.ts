@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { api } from './api';
 import { toast } from 'sonner';
 
 const DOCUMENTS_BUCKET = 'documents';
@@ -11,6 +11,19 @@ const ALLOWED_TYPES = {
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const base64String = reader.result as string;
+      const base64 = base64String.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
 
 export async function uploadDocumentFile(
   file: File,
@@ -50,26 +63,17 @@ async function uploadFile(
     const fileName = `${name1}-${name2}-${timestamp}.${fileExtension}`;
     const filePath = `${name1}/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from(bucketName)
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+    const fileBase64 = await fileToBase64(file);
 
-    if (uploadError) {
-      toast.error(`Upload failed: ${uploadError.message}`);
-      return null;
-    }
-
-    const { data } = supabase.storage
-      .from(bucketName)
-      .getPublicUrl(filePath);
-
-    const publicUrl = data.publicUrl;
+    const publicUrl = await api.post<string>('/api/storage/upload', {
+      bucket: bucketName,
+      path: filePath,
+      fileBase64,
+      contentType: file.type
+    });
 
     if (!publicUrl) {
-      toast.error('Failed to generate public URL');
+      toast.error('Failed to upload file to backend');
       return null;
     }
 
@@ -115,15 +119,10 @@ async function deleteFile(fileUrl: string, bucketName: string): Promise<boolean>
 
     console.log(`Deleting file from ${bucketName}: ${filePath}`);
 
-    const { error } = await supabase.storage
-      .from(bucketName)
-      .remove([filePath]);
-
-    if (error) {
-      console.error('Failed to delete file from Supabase:', error);
-      toast.error(`Failed to delete file: ${error.message}`);
-      return false;
-    }
+    await api.delete('/api/storage/delete', {
+      bucket: bucketName,
+      path: filePath
+    });
 
     toast.success('File deleted from storage');
     return true;

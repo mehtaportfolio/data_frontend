@@ -13,7 +13,7 @@ export function useServiceHealth() {
   const [isLoading, setIsLoading] = useState(false);
 
   const getServiceConfigs = () => {
-    const apiUrls = (import.meta.env.VITE_API_URL || 'http://localhost:3000').split(',');
+    const apiUrls = (import.meta.env.VITE_API_URL || '').split(',').map(s => s.trim()).filter(Boolean);
     const serviceIds = (import.meta.env.VITE_RENDER_SERVICE_ID || '').split(',');
     const apiKey = import.meta.env.VITE_RENDER_API_KEY || '';
 

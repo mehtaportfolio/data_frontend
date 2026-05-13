@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useNavigate } from 'react-router-dom';
 import { storage } from '../utils/storage';
 import { hashPin } from '../utils/encryption';
-import { supabase } from '../utils/supabase';
+import { api } from '../utils/api';
 import { toast } from 'sonner';
 import { biometric } from '../utils/biometric';
 
@@ -36,16 +36,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isSetup = storage.isSetup();
     
     setState({
-      isAuthenticated: false,
+      isAuthenticated: !!localStorage.getItem('auth_token'),
       isSetup: isSetup
     });
     
-    localStorage.removeItem('auth_token');
     setIsInitialized(true);
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user_id');
     setState(prev => ({
       ...prev,
       isAuthenticated: false
@@ -75,35 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (pin: string) => {
     try {
-      console.log('🔐 Attempting login with PIN...');
-      const { data, error } = await supabase
-        .from('user_master')
-        .select('master_password')
-        .single();
+      console.log('🔐 Attempting login with PIN via backend...');
+      const response = await api.post<{ userId: string }>('/api/auth/login', { pin });
 
-      console.log('📡 Supabase response:', { hasData: !!data, error: error?.message });
-
-      if (error) {
-        console.error('❌ Query error:', error);
-        
-        if (error.message.includes('404') || error.message.includes('NOT_FOUND')) {
-          toast.error('Database connection failed. Check Supabase environment variables on Vercel.');
-        } else {
-          toast.error(`Failed to verify credentials: ${error.message}`);
-        }
-        return false;
-      }
-
-      if (!data) {
-        console.error('❌ No user data found');
-        toast.error('User not found. Please set up your PIN first.');
-        return false;
-      }
-
-      console.log('🔍 Comparing PIN...');
-      
-      if (data.master_password === pin) {
+      if (response) {
         localStorage.setItem('auth_token', 'true');
+        localStorage.setItem('auth_user_id', response.userId);
         setState(prev => ({
           ...prev,
           isAuthenticated: true
@@ -113,18 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
       
-      console.log('❌ PIN mismatch');
-      toast.error('Invalid PIN');
       return false;
     } catch (error) {
       console.error('❌ Login error:', error);
       const message = error instanceof Error ? error.message : 'Unknown error';
-      
-      if (message.includes('fetch') || message.includes('network')) {
-        toast.error('Network error. Check your connection and Supabase settings.');
-      } else {
-        toast.error(`Authentication failed: ${message}`);
-      }
+      toast.error(`Authentication failed: ${message}`);
       return false;
     }
   }, []);
@@ -134,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     storage.setPinHash(hash);
     storage.setSetup(true);
     localStorage.setItem('auth_token', 'true');
+    localStorage.setItem('auth_user_id', '1'); // Default for single user
     setState({
       isAuthenticated: true,
       isSetup: true
@@ -167,6 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const verified = await biometric.verifyCredential();
       if (verified) {
         localStorage.setItem('auth_token', 'true');
+        if (!localStorage.getItem('auth_user_id')) {
+          localStorage.setItem('auth_user_id', '1');
+        }
         setState(prev => ({
           ...prev,
           isAuthenticated: true
@@ -182,33 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const changePin = useCallback(async (oldPin: string, newPin: string) => {
     try {
-      const { data, error } = await supabase
-        .from('user_master')
-        .select('master_password')
-        .single();
-
-      if (error || !data) {
-        toast.error('Failed to verify current PIN');
-        return false;
-      }
-
-      if (data.master_password !== oldPin) {
-        toast.error('Current PIN is incorrect');
-        return false;
-      }
-
-      const { error: updateError } = await supabase
-        .from('user_master')
-        .update({ master_password: newPin })
-        .eq('id', 1);
-
-      if (updateError) {
-        console.error('Update error:', updateError);
-        toast.error('Failed to update PIN');
-        return false;
-      }
-
+      await api.post('/api/auth/change-pin', { oldPin, newPin });
       storage.setPinHash(hashPin(newPin));
+      toast.success('PIN changed successfully');
       return true;
     } catch (error) {
       console.error('Change PIN error:', error);

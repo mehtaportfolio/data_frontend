@@ -18,8 +18,10 @@ export function BankDepositPage() {
   const [searchParams] = useSearchParams();
   const [isSourceDropdownOpen, setIsSourceDropdownOpen] = useState(false);
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
+  const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
   const sourceDropdownRef = React.useRef<HTMLDivElement>(null);
   const accountDropdownRef = React.useRef<HTMLDivElement>(null);
+  const yearDropdownRef = React.useRef<HTMLDivElement>(null);
 
   const {
     data: deposits,
@@ -67,7 +69,7 @@ export function BankDepositPage() {
     },
   });
 
-  const [selectedYear, setSelectedYear] = useState<string>('');
+  const [selectedYears, setSelectedYears] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState<string>('all');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
@@ -91,6 +93,9 @@ export function BankDepositPage() {
       }
       if (accountDropdownRef.current && !accountDropdownRef.current.contains(event.target as Node)) {
         setIsAccountDropdownOpen(false);
+      }
+      if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target as Node)) {
+        setIsYearDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -125,6 +130,11 @@ export function BankDepositPage() {
     return Array.from(new Set(dbAccounts)).sort();
   }, [deposits, selectedSources]);
 
+  const availableYears = useMemo(() => {
+    const years = deposits.map(d => new Date(d.deposit_date).getFullYear().toString());
+    return Array.from(new Set(years)).sort((a, b) => b.localeCompare(a));
+  }, [deposits]);
+
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
       setIsFormOpen(true);
@@ -143,7 +153,7 @@ export function BankDepositPage() {
   const sourceValue = watch('source');
   const accountNameValue = watch('account_name');
 
-  const isYearFiltered = selectedYear !== '';
+  const isYearFiltered = selectedYears.length > 0;
 
   const depositsForYear = useMemo(() => {
     let filtered = deposits;
@@ -166,9 +176,9 @@ export function BankDepositPage() {
 
     return filtered.filter(deposit => {
       const depositYear = new Date(deposit.deposit_date).getFullYear().toString();
-      return depositYear === selectedYear;
+      return selectedYears.includes(depositYear);
     });
-  }, [deposits, selectedYear, selectedTab, isYearFiltered, selectedSources, selectedAccounts]);
+  }, [deposits, selectedYears, selectedTab, isYearFiltered, selectedSources, selectedAccounts]);
 
   const displayedTotal = useMemo(() => {
     return depositsForYear.reduce((sum, deposit) => sum + deposit.amount, 0);
@@ -339,18 +349,82 @@ export function BankDepositPage() {
 
         {/* Year Filter with Add Button */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Select Year
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Select Year</label>
+            {selectedYears.length > 0 && (
+              <button 
+                onClick={() => setSelectedYears([])}
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
           <div className="flex gap-3">
-            <input
-              type="number"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              min={2000}
-              max={2100}
-              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
+            <div className="flex-1 relative" ref={yearDropdownRef}>
+              <button
+                onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+              >
+                <span className="truncate">
+                  {selectedYears.length === 0 
+                    ? 'All Years' 
+                    : selectedYears.length === 1 
+                      ? selectedYears[0]
+                      : `${selectedYears.length} years selected`
+                  }
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isYearDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isYearDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute z-30 mt-2 w-full bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-xl max-h-60 overflow-y-auto p-2"
+                  >
+                    <div className="sticky top-0 bg-white dark:bg-gray-900 pb-2 mb-2 border-b border-gray-100 dark:border-gray-800">
+                      <label className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={selectedYears.length === availableYears.length && availableYears.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedYears(availableYears);
+                            } else {
+                              setSelectedYears([]);
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">Select All</span>
+                      </label>
+                    </div>
+                    <div className="space-y-1">
+                      {availableYears.map(year => (
+                        <label key={year} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={selectedYears.includes(year)}
+                            onChange={() => {
+                              if (selectedYears.includes(year)) {
+                                setSelectedYears(selectedYears.filter(y => y !== year));
+                              } else {
+                                setSelectedYears([...selectedYears, year]);
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{year}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             <motion.button
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -543,7 +617,7 @@ export function BankDepositPage() {
         >
           <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
             {isYearFiltered 
-              ? `Total (${selectedYear}${selectedTab !== 'all' ? ` - ${selectedTab}` : ''})`
+              ? `Total (${selectedYears.join(', ')}${selectedTab !== 'all' ? ` - ${selectedTab}` : ''})`
               : `Total${selectedTab !== 'all' ? ` - ${selectedTab}` : ''}`
             }
           </p>
@@ -552,7 +626,7 @@ export function BankDepositPage() {
           </h3>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2">
             {isYearFiltered 
-              ? `${depositsForYear.length} deposits${selectedTab !== 'all' ? ` (${selectedTab})` : ''} in ${selectedYear}`
+              ? `${depositsForYear.length} deposits${selectedTab !== 'all' ? ` (${selectedTab})` : ''} in ${selectedYears.join(', ')}`
               : `${depositsForYear.length} total deposits matching filters`
             }
           </p>

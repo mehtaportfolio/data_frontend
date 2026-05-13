@@ -1,4 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+if (!API_URL) {
+  console.error('VITE_API_URL environment variable is missing. Please check your .env file.');
+}
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -9,9 +13,16 @@ export interface ApiResponse<T> {
 
 class ApiClient {
   private getHeaders() {
-    return {
+    const userId = localStorage.getItem('auth_user_id');
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
+    
+    if (userId) {
+      headers['x-user-id'] = userId;
+    }
+    
+    return headers;
   }
 
   async get<T>(endpoint: string): Promise<T> {
