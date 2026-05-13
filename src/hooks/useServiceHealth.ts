@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { storage } from '../utils/storage';
 
 interface ServiceHealthResponse {
   success: boolean;
@@ -22,7 +23,10 @@ export function useServiceHealth() {
       // Check the backend's own status endpoint which checks Render status internally
       const response = await fetch(`${apiUrl}/api/service/status`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': storage.getUserId()
+        },
         signal: AbortSignal.timeout(10000)
       });
 
@@ -57,7 +61,10 @@ export function useServiceHealth() {
     try {
       const response = await fetch(`${apiUrl}/api/service/restart`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': storage.getUserId()
+        },
       });
 
       if (!response.ok) {
@@ -79,7 +86,10 @@ export function useServiceHealth() {
         try {
           const statusRes = await fetch(`${apiUrl}/api/service/status`, {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-user-id': storage.getUserId()
+            },
             signal: AbortSignal.timeout(5000)
           });
 
