@@ -16,18 +16,6 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const triggerBiometric = async () => {
-      if (storage.isBiometricEnabled()) {
-        const success = await loginWithBiometric();
-        if (success) {
-          navigate('/');
-        }
-      }
-    };
-    triggerBiometric();
-  }, [loginWithBiometric, navigate]);
-
   const handlePinComplete = async (pin: string) => {
     setIsLoading(true);
     try {
