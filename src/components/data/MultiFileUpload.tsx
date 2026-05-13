@@ -39,14 +39,11 @@ export function MultiFileUpload({
     updateUploadState(true);
     try {
       const newFiles: string[] = [];
-      console.log('📦 Starting file upload:', { count: fileList.length, documentName, accountOwner });
       
       for (let i = 0; i < fileList.length; i++) {
         const file = fileList[i];
-        console.log(`⬆️ Uploading file ${i + 1}/${fileList.length}:`, file.name);
         const publicUrl = await uploadPolicyFile(file, documentName, accountOwner);
         if (publicUrl) {
-          console.log(`✅ File ${i + 1} uploaded:`, publicUrl);
           newFiles.push(publicUrl);
         } else {
           console.warn(`❌ File ${i + 1} upload failed (no URL returned)`);
@@ -55,7 +52,6 @@ export function MultiFileUpload({
 
       if (newFiles.length > 0) {
         const updatedFiles = [...files, ...newFiles];
-        console.log('📝 Updating file list:', { newCount: newFiles.length, totalCount: updatedFiles.length });
         setFiles(updatedFiles);
         onFilesChange(updatedFiles);
         toast.success(`${newFiles.length} file(s) uploaded successfully`);
@@ -64,7 +60,6 @@ export function MultiFileUpload({
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to upload files';
-      console.error('❌ Upload error:', errorMsg);
       toast.error(errorMsg);
     } finally {
       updateUploadState(false);
@@ -75,12 +70,10 @@ export function MultiFileUpload({
   const handleDeleteFile = async (index: number) => {
     try {
       const fileToDelete = files[index];
-      console.log('🗑️ Deleting file:', fileToDelete);
       
       const success = await deletePolicyFile(fileToDelete);
       if (success) {
         const updatedFiles = files.filter((_, i) => i !== index);
-        console.log('📝 Updated files after deletion:', updatedFiles);
         setFiles(updatedFiles);
         onFilesChange(updatedFiles);
         onFilesDeleted?.(1);
@@ -88,7 +81,6 @@ export function MultiFileUpload({
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to delete file';
-      console.error('❌ Delete error:', errorMsg);
       toast.error(errorMsg);
     }
   };

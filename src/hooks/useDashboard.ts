@@ -26,7 +26,6 @@ export function useDashboard() {
   const fetchDashboard = useCallback(async () => {
     try {
       const result = await api.get<DashboardData>('/api/dashboard');
-      console.log('📊 Dashboard data fetched:', result);
       
       // Normalize insurance policies if they have documents
       const normalizedInsurance = result.insurance_policies.map(item => {

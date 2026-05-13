@@ -75,7 +75,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (pin: string) => {
     try {
-      console.log('🔐 Attempting login with PIN via backend...');
       const response = await api.post<{ userId: string }>('/api/auth/login', { pin });
 
       if (response) {

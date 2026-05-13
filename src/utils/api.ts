@@ -29,7 +29,6 @@ class ApiClient {
 
   async get<T>(endpoint: string): Promise<T> {
     const fullUrl = `${API_URL}${endpoint}`;
-    console.log('[API] GET', fullUrl);
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers: this.getHeaders(),
@@ -101,10 +100,11 @@ class ApiClient {
     return result.data;
   }
 
-  async delete(endpoint: string): Promise<void> {
+  async delete(endpoint: string, body?: Record<string, unknown>): Promise<void> {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {

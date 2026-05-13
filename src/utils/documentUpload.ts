@@ -117,8 +117,6 @@ async function deleteFile(fileUrl: string, bucketName: string): Promise<boolean>
       return false;
     }
 
-    console.log(`Deleting file from ${bucketName}: ${filePath}`);
-
     await api.delete('/api/storage/delete', {
       bucket: bucketName,
       path: filePath

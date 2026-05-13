@@ -138,10 +138,8 @@ export function InsurancePoliciesPage() {
           }
         }
         
-        console.log('📂 Loading existing documents:', docs);
         setPolicyDocuments(docs);
       } else {
-        console.log('📂 No existing documents');
         setPolicyDocuments([]);
       }
     } else {
@@ -150,19 +148,9 @@ export function InsurancePoliciesPage() {
   }, [isFormOpen, editingItem, reset]);
   
   useEffect(() => {
-    console.log('📋 Current policy documents state:', policyDocuments);
-  }, [policyDocuments]);
-  
-  useEffect(() => {
     if (filesDeletedCount > 0 && editingItem) {
       const autoSaveDeletedFiles = async () => {
         try {
-          console.log('💾 Auto-saving after file deletion:', {
-            policyId: editingItem.id,
-            remainingDocs: policyDocuments.length,
-            deletedCount: filesDeletedCount
-          });
-          
           const finalData = {
             policy_documents: policyDocuments.length > 0 ? policyDocuments : null
           };
