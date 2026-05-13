@@ -3,7 +3,7 @@ const STORAGE_KEYS = {
   PIN_HASH: 'secure_vault_pin_hash',
   BIOMETRIC_ENABLED: 'secure_vault_biometric',
   IS_SETUP: 'secure_vault_is_setup',
-  USER_ID: 'secure_vault_user_id'
+  USER_ID: 'auth_user_id'
 };
 
 const generateUUID = (): string => {
@@ -26,10 +26,11 @@ export const storage = {
   getUserId: (): string => {
     let userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     if (!userId) {
-      userId = generateUUID();
+      userId = '1'; // Default to '1' as seen in AuthContext
       localStorage.setItem(STORAGE_KEYS.USER_ID, userId);
     }
     return userId;
   },
+  setUserId: (userId: string) => localStorage.setItem(STORAGE_KEYS.USER_ID, userId),
   clear: () => localStorage.clear()
 };

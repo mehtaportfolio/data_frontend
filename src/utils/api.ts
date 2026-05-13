@@ -1,3 +1,5 @@
+import { storage } from './storage';
+
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 if (!API_URL) {
@@ -13,7 +15,7 @@ export interface ApiResponse<T> {
 
 class ApiClient {
   private getHeaders() {
-    const userId = localStorage.getItem('auth_user_id');
+    const userId = storage.getUserId();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };

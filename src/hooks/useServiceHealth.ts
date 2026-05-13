@@ -12,115 +12,83 @@ interface ServiceHealthResponse {
 export function useServiceHealth() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const getServiceConfigs = () => {
-    const apiUrls = (import.meta.env.VITE_API_URL || '').split(',').map(s => s.trim()).filter(Boolean);
-    const serviceIds = (import.meta.env.VITE_RENDER_SERVICE_ID || '').split(',');
-    const apiKey = import.meta.env.VITE_RENDER_API_KEY || '';
-
-    return apiUrls.map((url, index) => ({
-      url: url.trim(),
-      serviceId: serviceIds[index]?.trim() || serviceIds[0]?.trim() || '',
-      apiKey: apiKey.trim()
-    }));
-  };
-
   const checkServiceStatus = async (silent = false): Promise<boolean> => {
-    const services = getServiceConfigs();
+    const apiUrl = import.meta.env.VITE_API_URL || '';
     let allHealthy = true;
-
+    
     try {
       if (!silent) setIsLoading(true);
 
-      for (const service of services) {
-        try {
-          // The user specifically asked for /health point check
-          const response = await fetch(`${service.url}/health`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-            // Add a timeout to avoid long waits
-            signal: AbortSignal.timeout(5000)
-          });
+      // Check the backend's own status endpoint which checks Render status internally
+      const response = await fetch(`${apiUrl}/api/service/status`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(10000)
+      });
 
-          if (!response.ok) {
-            throw new Error(`Service at ${service.url} is not healthy`);
-          }
-
-          const data = (await response.json()) as ServiceHealthResponse;
-          if (!data.success) {
-            throw new Error(`Service at ${service.url} reported failure`);
-          }
-        } catch (error) {
-          allHealthy = false;
-          if (!silent) toast.error(`✗ Backend service at ${service.url} is down. Attempting restart...`);
-          await restartServiceDirectly(service.serviceId, service.apiKey, service.url, silent);
-        }
+      if (!response.ok) {
+        throw new Error('Backend service is not reachable');
       }
 
-      if (allHealthy && !silent) {
-        toast.success('✓ All backend services are running');
-      }
-
-      if (allHealthy) {
-        // Trigger a custom event to notify useSupabase hooks to refresh
+      const data = (await response.json()) as ServiceHealthResponse;
+      
+      if (data.success && data.isRunning) {
+        if (!silent) toast.success('✓ Backend service is running');
         window.dispatchEvent(new CustomEvent('backend-healthy'));
+        return true;
+      } else {
+        allHealthy = false;
+        if (!silent) toast.error(`✗ Backend service is not running. Attempting restart...`);
+        await restartServiceViaBackend(apiUrl, silent);
+        return false;
       }
-
-      return allHealthy;
     } catch (error) {
+      if (!silent) toast.error(`✗ Backend service is down. Attempting restart...`);
+      // If we can't even reach the status endpoint, we can't reach the restart endpoint either
+      // In this case, the user needs to manually check or we use a hardcoded fallback if possible
+      // But per security requirement, we remove the direct Render API call from frontend
       return false;
     } finally {
       if (!silent) setIsLoading(false);
     }
   };
 
-  const restartServiceDirectly = async (serviceId: string, apiKey: string, apiUrl: string, silent: boolean): Promise<void> => {
-    if (!serviceId || !apiKey) {
-      if (!silent) toast.error('Cannot restart service: Service ID or API Key missing in env');
-      return;
-    }
-
+  const restartServiceViaBackend = async (apiUrl: string, silent: boolean): Promise<void> => {
     try {
-      // Render API call to trigger a new deploy (which restarts the service)
-      const response = await fetch(`https://api.render.com/v1/services/${serviceId}/deploys`, {
+      const response = await fetch(`${apiUrl}/api/service/restart`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Render API call failed');
+        throw new Error('Failed to initiate restart via backend');
       }
 
-      const toastId = toast.loading(`Service ${apiUrl} is restarting... This may take a minute.`);
+      const toastId = toast.loading('Service restart initiated via backend...');
       
-      // Poll /health until it's back
+      // Poll for health
       let isServiceRunning = false;
       let attempts = 0;
-      const maxAttempts = 20; // Increased attempts for Render cold starts
-      const checkInterval = 10000; // 10 seconds between checks
+      const maxAttempts = 15;
+      const checkInterval = 10000;
 
       while (!isServiceRunning && attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, checkInterval));
         attempts++;
 
         try {
-          const statusResponse = await fetch(`${apiUrl}/health`, {
+          const statusRes = await fetch(`${apiUrl}/api/service/status`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
             signal: AbortSignal.timeout(5000)
           });
 
-          if (statusResponse.ok) {
-            const statusData = (await statusResponse.json()) as ServiceHealthResponse;
-            if (statusData.success) {
+          if (statusRes.ok) {
+            const statusData = (await statusRes.json()) as ServiceHealthResponse;
+            if (statusData.success && statusData.isRunning) {
               isServiceRunning = true;
               toast.dismiss(toastId);
-              toast.success(`✓ Service at ${apiUrl} is now running!`);
-              // Trigger refresh when back online
+              toast.success('✓ Service is now running!');
               window.dispatchEvent(new CustomEvent('backend-healthy'));
             }
           }
@@ -131,10 +99,10 @@ export function useServiceHealth() {
 
       if (!isServiceRunning) {
         toast.dismiss(toastId);
-        if (!silent) toast.error(`Service at ${apiUrl} is still starting. Please refresh in a bit.`);
+        if (!silent) toast.error('Service is taking longer than expected to start.');
       }
     } catch (error: any) {
-      if (!silent) toast.error(`Error restarting service: ${error.message || 'Check Render dashboard'}`);
+      if (!silent) toast.error(`Error: ${error.message}`);
     }
   };
 

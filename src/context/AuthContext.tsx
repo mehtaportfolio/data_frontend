@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user_id');
+    storage.setUserId('');
     setState(prev => ({
       ...prev,
       isAuthenticated: false
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response) {
         localStorage.setItem('auth_token', 'true');
-        localStorage.setItem('auth_user_id', response.userId);
+        storage.setUserId(response.userId);
         setState(prev => ({
           ...prev,
           isAuthenticated: true
@@ -101,14 +101,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setup = useCallback((pin: string) => {
     const hash = hashPin(pin);
-    storage.setPinHash(hash);
-    storage.setSetup(true);
-    localStorage.setItem('auth_token', 'true');
-    localStorage.setItem('auth_user_id', '1'); // Default for single user
+    storage.setPinHash(hash)
+    storage.setSetup(true)
+    localStorage.setItem('auth_token', 'true')
+    storage.setUserId('1') // Default for single user
     setState({
       isAuthenticated: true,
       isSetup: true
-    });
+    })
   }, []);
 
   const enableBiometric = useCallback(async () => {
@@ -138,9 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const verified = await biometric.verifyCredential();
       if (verified) {
         localStorage.setItem('auth_token', 'true');
-        if (!localStorage.getItem('auth_user_id')) {
-          localStorage.setItem('auth_user_id', '1');
-        }
+        storage.getUserId(); // Ensures user ID exists, defaults to '1'
         setState(prev => ({
           ...prev,
           isAuthenticated: true
