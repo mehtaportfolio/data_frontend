@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isSetup = storage.isSetup();
     
     setState({
-      isAuthenticated: !!localStorage.getItem('auth_token'),
+      isAuthenticated: false, // Always require login on refresh
       isSetup: isSetup
     });
     
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_token');
     storage.setUserId('');
     setState(prev => ({
       ...prev,
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await api.post<{ userId: string }>('/api/auth/login', { pin });
 
       if (response) {
-        localStorage.setItem('auth_token', 'true');
+        sessionStorage.setItem('auth_token', 'true');
         storage.setUserId(response.userId);
         setState(prev => ({
           ...prev,
@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const hash = hashPin(pin);
     storage.setPinHash(hash)
     storage.setSetup(true)
-    localStorage.setItem('auth_token', 'true')
+    sessionStorage.setItem('auth_token', 'true')
     storage.setUserId('1') // Default for single user
     setState({
       isAuthenticated: true,
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const verified = await biometric.verifyCredential();
       if (verified) {
-        localStorage.setItem('auth_token', 'true');
+        sessionStorage.setItem('auth_token', 'true');
         storage.getUserId(); // Ensures user ID exists, defaults to '1'
         setState(prev => ({
           ...prev,
