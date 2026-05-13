@@ -45,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     sessionStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user_id'); // Clear user ID to ensure clean state
     storage.setUserId('');
     setState(prev => ({
       ...prev,

@@ -19,6 +19,13 @@ export function PinInput({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (disabled) return;
     const value = e.target.value;
+    
+    // Prevent mass autofill by only allowing one character change at a time 
+    // or a full clear (which is what we do on error)
+    if (value.length > pin.length + 1 && value.length !== 0) {
+      return;
+    }
+
     if (!/^\d*$/.test(value)) return;
     if (value.length <= length) {
       setPin(value);
@@ -50,7 +57,18 @@ export function PinInput({
 
       <div onClick={handleContainerClick} className="relative flex items-center justify-center space-x-4 cursor-text">
         {/* Hidden Input */}
-        <input ref={inputRef} type="password" value={pin} onChange={handleChange} disabled={disabled} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" autoComplete="off" inputMode="numeric" pattern="[0-9]*" />
+        <input
+          ref={inputRef}
+          type="tel"
+          name="pin-input"
+          value={pin}
+          onChange={handleChange}
+          disabled={disabled}
+          className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+          autoComplete="one-time-code"
+          inputMode="numeric"
+          pattern="[0-9]*"
+        />
 
         {/* Visual Dots */}
         {Array.from({
