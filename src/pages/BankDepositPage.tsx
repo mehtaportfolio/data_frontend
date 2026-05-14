@@ -142,11 +142,11 @@ export function BankDepositPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    const uniqueTypes = Array.from(new Set(
-      deposits
-        .map(d => d.deposit_type)
-        .filter(Boolean)
-    )).sort() as string[];
+    const defaultTypes = ['Reward', 'Review', 'Expense'];
+    const dbTypes = deposits
+      .map(d => d.deposit_type)
+      .filter(Boolean) as string[];
+    const uniqueTypes = Array.from(new Set([...defaultTypes, ...dbTypes])).sort();
     setDepositTypes(uniqueTypes);
   }, [deposits]);
 
@@ -181,8 +181,13 @@ export function BankDepositPage() {
   }, [deposits, selectedYears, selectedTab, isYearFiltered, selectedSources, selectedAccounts]);
 
   const displayedTotal = useMemo(() => {
-    return depositsForYear.reduce((sum, deposit) => sum + deposit.amount, 0);
-  }, [depositsForYear]);
+    return depositsForYear.reduce((sum, deposit) => {
+      if (selectedTab === 'all' && deposit.deposit_type === 'Expense') {
+        return sum - deposit.amount;
+      }
+      return sum + deposit.amount;
+    }, 0);
+  }, [depositsForYear, selectedTab]);
 
   const yearWiseData = useMemo(() => {
     const yearMap: { [key: string]: number } = {};
@@ -197,7 +202,10 @@ export function BankDepositPage() {
     
     dataToProcess.forEach(deposit => {
       const year = new Date(deposit.deposit_date).getFullYear().toString();
-      yearMap[year] = (yearMap[year] || 0) + deposit.amount;
+      const amount = (selectedTab === 'all' && deposit.deposit_type === 'Expense')
+        ? -deposit.amount
+        : deposit.amount;
+      yearMap[year] = (yearMap[year] || 0) + amount;
     });
     return Object.entries(yearMap)
       .map(([year, amount]) => ({ year, amount }))
@@ -205,7 +213,7 @@ export function BankDepositPage() {
   }, [deposits, depositsForYear, isYearFiltered, selectedTab, selectedSources, selectedAccounts]);
 
   const totalAmount = useMemo(() => {
-    return yearWiseData.reduce((sum, item) => sum + item.amount, 0) || 1;
+    return yearWiseData.reduce((sum, item) => sum + Math.abs(item.amount), 0) || 1;
   }, [yearWiseData]);
 
   const onFormSubmit = async (data: {
@@ -330,7 +338,7 @@ export function BankDepositPage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex gap-2 overflow-x-auto pb-2"
         >
-          {['all', 'Reward', 'Review'].map(tab => (
+          {['all', 'Reward', 'Review', 'Expense'].map(tab => (
             <motion.button
               key={tab}
               onClick={() => setSelectedTab(tab)}
@@ -644,7 +652,7 @@ export function BankDepositPage() {
             </h3>
             <div className="space-y-4">
               {yearWiseData.map(item => {
-                const percentage = (item.amount / totalAmount) * 100;
+                const percentage = (Math.abs(item.amount) / totalAmount) * 100;
                 return (
                   <motion.button
                     key={item.year}
@@ -659,8 +667,8 @@ export function BankDepositPage() {
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {item.year}
                       </span>
-                      <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                        ₹{item.amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                      <span className={`text-sm font-semibold ${item.amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                        {item.amount < 0 ? '-' : ''}₹{Math.abs(item.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-8 overflow-hidden">
@@ -717,8 +725,8 @@ export function BankDepositPage() {
                           className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                         >
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">{formattedDate}</td>
-                          <td className="px-4 py-3 text-sm font-semibold text-blue-600 dark:text-blue-400">
-                            ₹{deposit.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                          <td className={`px-4 py-3 text-sm font-semibold ${deposit.deposit_type === 'Expense' ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                            {deposit.deposit_type === 'Expense' ? '-' : ''}₹{deposit.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{deposit.source}</td>
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{deposit.account_name || '-'}</td>
@@ -834,8 +842,8 @@ export function BankDepositPage() {
                           className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                         >
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">{formattedDate}</td>
-                          <td className="px-4 py-3 text-sm font-semibold text-blue-600 dark:text-blue-400">
-                            ₹{deposit.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                          <td className={`px-4 py-3 text-sm font-semibold ${deposit.deposit_type === 'Expense' ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                            {deposit.deposit_type === 'Expense' ? '-' : ''}₹{deposit.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{deposit.source}</td>
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{deposit.account_name || '-'}</td>
