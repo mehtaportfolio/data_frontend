@@ -725,7 +725,7 @@ export function BankDepositPage() {
                           className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                         >
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">{formattedDate}</td>
-                          <td className={`px-4 py-3 text-sm font-semibold ${deposit.deposit_type === 'Expense' ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                          <td className={`px-4 py-3 text-sm font-semibold whitespace-nowrap ${deposit.deposit_type === 'Expense' ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>
                             {deposit.deposit_type === 'Expense' ? '-' : ''}₹{deposit.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{deposit.source}</td>
